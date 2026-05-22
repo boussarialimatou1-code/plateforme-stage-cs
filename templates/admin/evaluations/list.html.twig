@@ -1,0 +1,506 @@
+{% extends 'admin_base.html.twig' %}
+
+{% block title %}Demandes de Stage - Cour Suprême{% endblock %}
+{% block header_title %}Liste des Demandes de Stage{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .search-box {
+        position: relative;
+        margin-bottom: 20px;
+    }
+    .search-box .search-icon {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        font-size: 1rem;
+        z-index: 10;
+    }
+    .search-box .search-input {
+        padding-left: 40px;
+        padding-right: 40px;
+        height: 45px;
+        border-radius: 10px;
+        border: 2px solid #e2e8f0;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .search-box .search-input:focus {
+        border-color: var(--supreme-blue);
+        box-shadow: 0 0 0 3px rgba(0,26,51,0.08);
+        outline: none;
+    }
+    .search-box .search-clear {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #94a3b8;
+        cursor: pointer;
+        font-size: 1.1rem;
+        display: none;
+        z-index: 10;
+        padding: 5px;
+        border-radius: 50%;
+        transition: all 0.2s;
+    }
+    .search-box .search-clear:hover {
+        color: #dc2626;
+        background: #fef2f2;
+    }
+    .search-box .search-clear.visible {
+        display: block;
+    }
+    .no-results {
+        text-align: center;
+        padding: 50px 20px;
+        color: #64748b;
+    }
+    .no-results i {
+        font-size: 3rem;
+        color: #cbd5e1;
+        margin-bottom: 15px;
+        display: block;
+    }
+    .results-count {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        justify-content: space-between;
+    }
+    .results-count .badge {
+        font-size: 0.8rem;
+    }
+    .highlight-match {
+        background-color: #fef08a;
+        padding: 1px 3px;
+        border-radius: 2px;
+    }
+
+    .batch-assign-bar {
+        display: none;
+        background: #f0f7ff;
+        border: 2px solid var(--supreme-blue);
+        border-radius: 10px;
+        padding: 12px 18px;
+        margin-bottom: 20px;
+        align-items: center;
+        gap: 15px;
+        animation: slideDown 0.3s ease-out;
+    }
+    .batch-assign-bar.visible {
+        display: flex;
+    }
+    .batch-assign-bar .selected-count {
+        font-weight: 700;
+        color: var(--supreme-blue);
+        white-space: nowrap;
+    }
+    .batch-assign-bar select {
+        max-width: 300px;
+    }
+    .batch-assign-bar .btn {
+        white-space: nowrap;
+    }
+
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .checkbox-cell {
+        width: 40px;
+        text-align: center;
+    }
+    .checkbox-cell input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
+    .select-all-cell {
+        width: 40px;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+    <!-- BARRE DE RECHERCHE -->
+    <div class="search-box">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text"
+               id="searchInput"
+               class="form-control search-input"
+               placeholder="Rechercher par référence, nom du candidat, email, domaine..."
+               autocomplete="off">
+        <button type="button" class="search-clear" id="searchClear" title="Effacer la recherche">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    <!-- COMPTEUR DE RÉSULTATS + BARRE D'ASSIGNATION EN LOT -->
+    <div class="results-count" id="resultsCount">
+        <div>
+            <i class="fas fa-list-ol"></i>
+            <span id="countText">{{ dossiers|length }} dossier(s) trouvé(s)</span>
+        </div>
+
+        {% if evaluators is not empty %}
+        <div class="batch-assign-bar" id="batchAssignBar">
+            <span class="selected-count">
+                <span id="selectedCount">0</span> dossier(s) sélectionné(s)
+            </span>
+            <select id="batchEvaluator" class="form-control form-control-sm">
+                <option value="">-- Choisir un évaluateur --</option>
+                {% for eval in evaluators %}
+                    <option value="{{ eval.id }}">{{ eval.nom }} {{ eval.prenom }}</option>
+                {% endfor %}
+            </select>
+            <button type="button" class="btn btn-primary btn-sm" id="btnBatchAssign" disabled>
+                <i class="fas fa-user-plus mr-1"></i> Assigner en lot
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="btnCancelBatch">
+                <i class="fas fa-times mr-1"></i> Annuler
+            </button>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            <table class="table table-striped table-hover projects" id="dossiersTable">
+                <thead>
+                    <tr>
+                        {% if evaluators is not empty %}
+                        <th class="select-all-cell">
+                            <input type="checkbox" id="selectAll" title="Tout sélectionner">
+                        </th>
+                        {% endif %}
+                        <th style="width: 10%">Réf.</th>
+                        <th style="width: 20%">Candidat</th>
+                        <th style="width: 20%">Type / Domaine</th>
+                        <th style="width: 15%">Date Dépôt</th>
+                        <th style="width: 15%">Statut</th>
+                        <th style="width: 15%">Structure</th>
+                        <th style="width: 15%">Gestionnaire</th>
+                        <th style="width: 15%">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dossier in dossiers %}
+                        <tr class="dossier-row"
+                            data-reference="{{ dossier.reference|lower }}"
+                            data-candidat="{{ dossier.candidat ? (dossier.candidat.nom ~ ' ' ~ dossier.candidat.prenom)|lower : '' }}"
+                            data-email="{{ dossier.candidat ? dossier.candidat.email|lower : '' }}"
+                            data-domaine="{{ dossier.domaine|lower }}"
+                            data-type="{{ dossier.typeStage|lower }}"
+                            data-statut="{{ dossier.statut.value|lower }}"
+                            data-dossier-id="{{ dossier.id }}"
+                            data-dossier-statut="{{ dossier.statut.value }}">
+                            {% if evaluators is not empty and dossier.statut.value not in ['Validé', 'Rejeté'] %}
+                            <td class="checkbox-cell">
+                                <input type="checkbox" class="dossier-checkbox" value="{{ dossier.id }}"
+                                       data-dossier-id="{{ dossier.id }}">
+                            </td>
+                            {% elseif evaluators is not empty %}
+                            <td class="checkbox-cell"></td>
+                            {% endif %}
+                            <td>
+                                <a href="{{ path('app_evaluator_evaluations_show', {id: dossier.id}) }}" class="text-primary font-weight-bold">
+                                    <code class="ref-text">{{ dossier.reference }}</code>
+                                </a>
+                            </td>
+                            <td>
+                                <a href="{{ path('app_evaluator_evaluations_show', {id: dossier.id}) }}" class="text-dark">
+                                    {% if dossier.candidat %}
+                                        <span class="font-weight-bold candidat-text">{{ dossier.candidat.nom }} {{ dossier.candidat.prenom }}</span>
+                                    {% else %}
+                                        <span class="text-muted font-italic">Candidat inconnu</span>
+                                    {% endif %}
+                                </a><br/>
+                                <small class="email-text">
+                                    {% if dossier.candidat and dossier.candidat.email %}
+                                        {{ dossier.candidat.email }}
+                                    {% else %}
+                                        Email N/A
+                                    {% endif %}
+                                </small>
+                            </td>
+                            <td>
+                                <span class="badge badge-info type-text">{{ dossier.typeStage|capitalize }}</span>
+                                {% if dossier.isRenouvellement %}
+                                    <span class="badge badge-secondary" title="Demande de prolongation">
+                                        <twig:ux:icon name="lucide:refresh-cw" size="12" /> Renouvellement
+                                    </span>
+                                {% endif %}
+                                <br/>
+                                <small class="domaine-text">{{ dossier.domaine|capitalize }}</small>
+                            </td>
+                            <td class="date-text">{{ dossier.dateCreation|date('d/m/Y') }}</td>
+                            <td>
+                                {% set badge_class = 'badge-secondary' %}
+                                {% if dossier.statut.value == 'En attente' %}
+                                    {% set badge_class = 'badge-warning' %}
+                                {% elseif dossier.statut.value == 'En évaluation' %}
+                                    {% set badge_class = 'badge-primary' %}
+                                {% elseif dossier.statut.value == 'Mis en réserve' %}
+                                    {% set badge_class = 'badge-info' %}
+                                {% elseif dossier.statut.value == 'Validé' %}
+                                    {% set badge_class = 'badge-success' %}
+                                {% elseif dossier.statut.value == 'Rejeté' %}
+                                    {% set badge_class = 'badge-danger' %}
+                                {% endif %}
+                                <span class="badge {{ badge_class }} statut-text">{{ dossier.statut.getLabel() }}</span>
+                            </td>
+                            <td class="date-text">{{ dossier.structure.getLabel() }}</td>
+                            <td>
+                                {% if evaluators is not empty and dossier.statut.value not in ['Validé', 'Rejeté'] %}
+                                    <form action="{{ path('app_evaluator_evaluations_assign', {id: dossier.id}) }}" method="POST" class="single-assign-form">
+                                        <select name="evaluateur_id" class="form-control form-control-sm" onchange="this.form.submit()">
+                                            <option value="">-- Non assigné --</option>
+                                            {% for eval in evaluators %}
+                                                <option value="{{ eval.id }}" {{ (dossier.evaluateur and dossier.evaluateur.id == eval.id) ? 'selected' : '' }}>
+                                                    {{ eval.nom }} {{ eval.prenom }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </form>
+                                {% else %}
+                                    {% if dossier.evaluateur %}
+                                        <span class="badge badge-light gestionnaire-text">
+                                            {{ dossier.evaluateur.nom }} {{ dossier.evaluateur.prenom|slice(0,1) }}.
+                                        </span>
+                                    {% elseif dossier.evaluations is not empty %}
+                                        <span class="badge badge-secondary">Noté</span>
+                                    {% else %}
+                                        <span class="text-muted small italic">Non assigné</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td class="project-actions text-right">
+                                <div class="d-flex justify-content-end align-items-center" style="gap: 10px;">
+                                    <a class="btn btn-primary btn-sm" href="{{ path('app_evaluator_evaluations_show', {id: dossier.id}) }}">
+                                        <i class="fas fa-search"></i> Examiner
+                                    </a>
+                                    {% if dossier.statut.value == 'Validé' %}
+                                        <a href="{{ path('app_evaluator_dossier_prepare_letter', {id: dossier.id}) }}" class="btn btn-success btn-sm">
+                                            <i class="fas fa-file-signature"></i> Lettre
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr id="noDossiersRow">
+                            <td colspan="{{ evaluators is not empty ? '8' : '7' }}" class="text-center">Aucune demande en attente.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="no-results" id="noResults" style="display: none;">
+                <i class="fas fa-search"></i>
+                <h5>Aucun dossier trouvé</h5>
+                <p>Aucun dossier ne correspond à votre recherche.</p>
+            </div>
+        </div>
+    </div>
+
+    <form id="batchAssignForm" method="POST" action="{{ path('app_evaluator_evaluations_batch_assign') }}" style="display: none;">
+        <input type="hidden" name="evaluateur_id" id="batchEvaluateurId">
+        <input type="hidden" name="dossier_ids" id="batchDossierIds">
+    </form>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        const searchClear = document.getElementById('searchClear');
+        const rows = document.querySelectorAll('.dossier-row');
+        const noResults = document.getElementById('noResults');
+        const countText = document.getElementById('countText');
+        const table = document.getElementById('dossiersTable');
+
+        function performSearch() {
+            const query = searchInput.value.toLowerCase().trim();
+            let visibleCount = 0;
+
+            if (query.length > 0) {
+                searchClear.classList.add('visible');
+            } else {
+                searchClear.classList.remove('visible');
+            }
+
+            rows.forEach(function(row) {
+                const reference = row.getAttribute('data-reference') || '';
+                const candidat = row.getAttribute('data-candidat') || '';
+                const email = row.getAttribute('data-email') || '';
+                const domaine = row.getAttribute('data-domaine') || '';
+                const type = row.getAttribute('data-type') || '';
+                const statut = row.getAttribute('data-statut') || '';
+
+                const searchableText = reference + ' ' + candidat + ' ' + email + ' ' + domaine + ' ' + type + ' ' + statut;
+
+                if (query === '' || searchableText.includes(query)) {
+                    row.style.display = '';
+                    visibleCount++;
+                    if (query.length > 0) {
+                        highlightMatches(row, query);
+                    } else {
+                        removeHighlights(row);
+                    }
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            countText.textContent = visibleCount + ' dossier(s) trouvé(s) sur ' + rows.length;
+
+            if (visibleCount === 0 && rows.length > 0) {
+                table.querySelector('tbody').style.display = 'none';
+                noResults.style.display = 'block';
+            } else {
+                table.querySelector('tbody').style.display = '';
+                noResults.style.display = 'none';
+            }
+        }
+
+        function highlightMatches(row, query) {
+            const cells = row.querySelectorAll('.ref-text, .candidat-text, .email-text, .domaine-text, .type-text, .statut-text, .gestionnaire-text');
+            cells.forEach(function(cell) {
+                const text = cell.textContent;
+                const lowerText = text.toLowerCase();
+                if (lowerText.includes(query)) {
+                    const regex = new RegExp('(' + escapeRegex(query) + ')', 'gi');
+                    cell.innerHTML = text.replace(regex, '<span class="highlight-match">$1</span>');
+                }
+            });
+        }
+
+        function removeHighlights(row) {
+            const cells = row.querySelectorAll('.ref-text, .candidat-text, .email-text, .domaine-text, .type-text, .statut-text, .gestionnaire-text');
+            cells.forEach(function(cell) {
+                cell.innerHTML = cell.textContent;
+            });
+        }
+
+        function escapeRegex(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        searchInput.addEventListener('input', performSearch);
+        searchClear.addEventListener('click', function() {
+            searchInput.value = '';
+            performSearch();
+            searchInput.focus();
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                searchInput.focus();
+            }
+            if (e.key === 'Escape' && document.activeElement === searchInput) {
+                searchInput.value = '';
+                performSearch();
+                searchInput.blur();
+            }
+        });
+
+        const selectAll = document.getElementById('selectAll');
+        const checkboxes = document.querySelectorAll('.dossier-checkbox');
+        const batchBar = document.getElementById('batchAssignBar');
+        const selectedCount = document.getElementById('selectedCount');
+        const batchEvaluator = document.getElementById('batchEvaluator');
+        const btnBatchAssign = document.getElementById('btnBatchAssign');
+        const btnCancelBatch = document.getElementById('btnCancelBatch');
+        const batchDossierIds = document.getElementById('batchDossierIds');
+        const batchEvaluateurId = document.getElementById('batchEvaluateurId');
+        const batchForm = document.getElementById('batchAssignForm');
+
+        function updateBatchBar() {
+            const checkedBoxes = document.querySelectorAll('.dossier-checkbox:checked');
+            const count = checkedBoxes.length;
+
+            if (count > 0) {
+                batchBar.classList.add('visible');
+                selectedCount.textContent = count;
+                btnBatchAssign.disabled = (batchEvaluator.value === '');
+            } else {
+                batchBar.classList.remove('visible');
+                btnBatchAssign.disabled = true;
+            }
+        }
+
+        if (selectAll) {
+            selectAll.addEventListener('change', function() {
+                const isChecked = this.checked;
+                checkboxes.forEach(function(cb) {
+                    cb.checked = isChecked;
+                });
+                updateBatchBar();
+            });
+        }
+
+        checkboxes.forEach(function(cb) {
+            cb.addEventListener('change', function() {
+                updateBatchBar();
+                const allChecked = document.querySelectorAll('.dossier-checkbox:checked').length === checkboxes.length;
+                if (selectAll) selectAll.checked = allChecked;
+            });
+        });
+
+        batchEvaluator.addEventListener('change', function() {
+            btnBatchAssign.disabled = (this.value === '' || document.querySelectorAll('.dossier-checkbox:checked').length === 0);
+        });
+
+        btnBatchAssign.addEventListener('click', function() {
+            const evaluatorId = batchEvaluator.value;
+            if (!evaluatorId) {
+                Swal.fire('Attention', 'Veuillez choisir un évaluateur.', 'warning');
+                return;
+            }
+
+            const checkedBoxes = document.querySelectorAll('.dossier-checkbox:checked');
+            const dossierIds = Array.from(checkedBoxes).map(function(cb) { return cb.value; });
+
+            if (dossierIds.length === 0) {
+                Swal.fire('Attention', 'Aucun dossier sélectionné.', 'warning');
+                return;
+            }
+
+            Swal.fire({
+                title: 'Assigner ' + dossierIds.length + ' dossier(s) ?',
+                text: 'Ces dossiers seront assignés à ' + batchEvaluator.options[batchEvaluator.selectedIndex].text + '.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#001a33',
+                confirmButtonText: 'Oui, assigner',
+                cancelButtonText: 'Annuler'
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    batchEvaluateurId.value = evaluatorId;
+                    batchDossierIds.value = dossierIds.join(',');
+                    batchForm.submit();
+                }
+            });
+        });
+
+        btnCancelBatch.addEventListener('click', function() {
+            checkboxes.forEach(function(cb) { cb.checked = false; });
+            if (selectAll) selectAll.checked = false;
+            batchEvaluator.value = '';
+            updateBatchBar();
+        });
+    });
+</script>
+{% endblock %}

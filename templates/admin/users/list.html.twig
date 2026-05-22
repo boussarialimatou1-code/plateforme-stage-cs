@@ -1,0 +1,95 @@
+{% extends 'admin_base.html.twig' %}
+
+{% block title %}Gestion des Comptes - Cour Suprême{% endblock %}
+{% block header_title %}Comptes Agents (Évaluateurs & Admins){% endblock %}
+
+{% block body %}
+    {% set isMainAdmin = (app.user.email == super_admin_email) %}
+    {% set canManageAdmins = ('ROLE_ADMIN' in app.user.roles and app.user.canManageAdmins is defined and app.user.canManageAdmins) %}
+
+    <div class="mb-3">
+        <a href="{{ path('app_admin_users_new') }}" class="btn btn-primary">
+            <i class="fas fa-plus-circle mr-1"></i> Ajouter un agent
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Nom & Prénom</th>
+                        <th>Email</th>
+                        <th>Rôles</th>
+                        <th class="text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                        <tr>
+                            <td>
+                                <strong>{{ user.nom }}</strong> {{ user.prenom }}
+                            </td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                {% for role in user.roles %}
+                                    {% if role == 'ROLE_ADMIN' %}
+                                        <span class="badge badge-danger">Administrateur</span>
+                                        {% if user.email == super_admin_email %}
+                                            <span class="badge badge-warning" title="Administrateur Principal">
+                                                <i class="fas fa-crown"></i> Principal
+                                            </span>
+                                        {% elseif user.canManageAdmins is defined and user.canManageAdmins %}
+                                            <span class="badge badge-warning" title="Peut gérer les autres admins">
+                                                <i class="fas fa-crown"></i> Gestionnaire
+                                            </span>
+                                        {% endif %}
+                                    {% elseif role == 'ROLE_EVALUATEUR' %}
+                                        <span class="badge badge-info">Évaluateur</span>
+                                        {% if user.isMainEvaluator is defined and user.isMainEvaluator %}
+                                            <span class="badge badge-success" title="Évaluateur Principal">
+                                                <i class="fas fa-star"></i> Principal
+                                            </span>
+                                        {% endif %}
+                                    {% endif %}
+                                {% endfor %}
+                            </td>
+                            <td class="text-right">
+                                {% if user != app.user %}
+                                    {% set hasPermission = false %}
+                                    
+                                    {% if isMainAdmin %}
+                                        {% if user.email != super_admin_email %}
+                                            {% set hasPermission = true %}
+                                        {% endif %}
+                                    {% elseif canManageAdmins %}
+                                        {% if user.email != super_admin_email %}
+                                            {% set hasPermission = true %}
+                                        {% endif %}
+                                    {% elseif 'ROLE_ADMIN' not in user.roles %}
+                                        {% set hasPermission = true %}
+                                    {% endif %}
+
+                                    {% if hasPermission %}
+                                        <form action="{{ path('app_admin_users_delete', {id: user.id}) }}" method="POST" onsubmit="return confirm('Supprimer ce compte définitivement ?');" style="display:inline;">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user.id) }}">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                <i class="fas fa-trash-alt"></i> Supprimer
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">
+                                <i class="fas fa-users-slash mr-2"></i> Aucun agent trouvé.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

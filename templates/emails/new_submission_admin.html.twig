@@ -1,0 +1,24 @@
+{% extends 'emails/layout.html.twig' %}
+
+{% block content %}
+    <h1>Nouveau dossier déposé</h1>
+    <p>Un candidat vient de déposer un nouveau dossier de stage sur la plateforme.</p>
+    
+    <div style="background: #f4f6f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+        <p><strong>Référence :</strong> {{ dossier.reference }}</p>
+        <p><strong>Candidat :</strong> {{ dossier.candidat.nom|upper }} {{ dossier.candidat.prenom }}</p>
+        <p><strong>Type de stage :</strong> {{ dossier.typeStage|capitalize }}</p>
+        <p><strong>Domaine :</strong> {{ dossier.domaine|capitalize }}</p>
+    </div>
+
+    <p style="text-align: center;">
+        <a href="{{ url('app_evaluator_evaluations_show', {id: dossier.id}) }}" 
+           style="background-color: #002244; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">
+            Accéder au dossier pour évaluation
+        </a>
+    </p>
+
+    <p style="color: #666; font-size: 0.9em; margin-top: 30px;">
+        Ceci est un message automatique du système de gestion des stages de la Cour Suprême.
+    </p>
+{% endblock %}

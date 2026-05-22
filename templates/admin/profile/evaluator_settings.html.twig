@@ -1,0 +1,94 @@
+{% extends 'admin_base.html.twig' %}
+
+{% block title %}Profil Évaluateur - Cour Suprême{% endblock %}
+{% block header_title %}Sécurité Compte Expert Évaluateur{% endblock %}
+
+{% block body %}
+<div class="row">
+    <div class="col-md-6 mx-auto">
+        {% if app.user.doitChangerMotDePasse %}
+            <div class="alert alert-danger shadow-sm border-0 mb-4">
+                <h5 class="font-weight-bold"><i class="fas fa-shield-alt mr-2"></i> ACTION REQUISE</h5>
+                Votre compte a été réinitialisé par l'administrateur. 
+                <strong>Veuillez définir vos nouveaux accès pour pouvoir continuer.</strong>
+            </div>
+        {% endif %}
+
+        {% for message in app.flashes('error') %}
+            <div class="alert alert-danger shadow-sm border-0">
+                <i class="fas fa-exclamation-triangle mr-2"></i> {{ message }}
+            </div>
+        {% endfor %}
+
+        <div class="card card-outline card-primary shadow">
+            <div class="card-header border-0 pb-0">
+                <h3 class="card-title font-weight-bold text-primary"><i class="fas fa-user-lock mr-2"></i> Vos Accès Expert</h3>
+            </div>
+            <form method="POST" autocomplete="off">
+                <div class="card-body">
+                    {# 1. Mot de passe actuel - MASQUÉ si première connexion #}
+                    {% if not app.user.doitChangerMotDePasse %}
+                    <div class="form-group mb-4">
+                        <label for="current_password" class="text-primary font-weight-bold">
+                            <i class="fas fa-lock mr-1"></i> Entrez votre mot de passe actuel
+                        </label>
+                        <input type="password" id="current_password" name="verify_p" class="form-control border-primary" required 
+                               readonly onfocus="this.removeAttribute('readonly');" placeholder="••••••••">
+                    </div>
+                    {% endif %}
+
+                    {# 2. Nouvel Email #}
+                    <div class="form-group mb-4">
+                        <label for="update_email" class="text-primary font-weight-bold">
+                            <i class="fas fa-envelope mr-1"></i> 
+                            {% if app.user.doitChangerMotDePasse %}
+                                Confirmez ou modifiez votre email professionnel
+                            {% else %}
+                                Entrez votre nouvel email si vous voulez changer
+                            {% endif %}
+                        </label>
+                        <input type="email" id="update_email" name="update_email" class="form-control border-primary" 
+                               value="{{ app.user.email }}" required>
+                    </div>
+
+                    <hr class="my-4">
+
+                    {# 3. Nouveau Mot de passe #}
+                    <div class="form-group mb-4">
+                        <label for="new_password" class="text-primary font-weight-bold">
+                            <i class="fas fa-key mr-1"></i> 
+                            {% if app.user.doitChangerMotDePasse %}
+                                Définissez votre nouveau mot de passe personnel
+                            {% else %}
+                                Entrez votre nouveau mot de passe
+                            {% endif %}
+                        </label>
+                        <input type="password" id="new_password" name="update_p" class="form-control border-primary" 
+                               required
+                               readonly onfocus="this.removeAttribute('readonly');" placeholder="Minimum 8 caractères">
+                    </div>
+
+                    {# 4. Confirmation #}
+                    <div class="form-group mb-0">
+                        <label for="confirm_password" class="text-primary font-weight-bold">
+                            <i class="fas fa-check-double mr-1"></i> Confirmer votre nouveau mot de passe
+                        </label>
+                        <input type="password" id="confirm_password" name="update_pc" class="form-control border-primary"
+                               required
+                               readonly onfocus="this.removeAttribute('readonly');">
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-0 pt-0">
+                    <button type="submit" class="btn btn-primary btn-block font-weight-bold shadow-sm py-2">
+                        <i class="fas fa-save mr-2"></i> ENREGISTRER LES MODIFICATIONS
+                    </button>
+                    
+                    {% if not app.user.doitChangerMotDePasse %}
+                        <a href="{{ path('app_admin_dashboard') }}" class="btn btn-link btn-block text-muted small">Annuler</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

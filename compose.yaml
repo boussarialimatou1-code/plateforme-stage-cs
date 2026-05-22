@@ -1,0 +1,25 @@
+services:
+    php:
+        container_name: stage_app
+        restart: unless-stopped
+        environment:
+            SERVER_NAME: ":80"
+            DEFAULT_URI: https://${SERVER_NAME:-localhost}:${HTTPS_PORT:-443}
+            MAILER_DSN: smtp://shared_mailpit:1025
+            DATABASE_URL: mysql://root:root@shared_mysql:3306/stage?serverVersion=8.4.7&charset=utf8mb4
+        volumes:
+            - caddy_data:/data
+            - caddy_config:/config
+        networks:
+            - app_net
+            - shared_net
+
+volumes:
+    caddy_data:
+    caddy_config:
+
+networks:
+    app_net:
+        driver: bridge
+    shared_net:
+        external: true

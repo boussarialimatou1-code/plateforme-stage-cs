@@ -1,0 +1,14 @@
+{
+    "name": "certificat_individualite",
+    "dockerComposeFile": [
+        "../compose.yaml",
+        "../compose.dev.yaml"
+    ],
+    "service": "app",
+    "workspaceFolder": "/app",
+    "appPort": [
+        80,
+        443
+    ],
+    "initializeCommand": "docker build --target frankenphp_base -t frankenphp_base ."
+}

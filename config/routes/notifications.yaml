@@ -1,0 +1,7 @@
+app_notifications_mark_all_read:
+    path: /admin/notifications/marquer-toutes-lues
+    controller: App\Controller\Admin\NotificationController::markAllRead
+
+app_notifications_mark_read:
+    path: /admin/notifications/marquer-lue/{id}
+    controller: App\Controller\Admin\NotificationController::markRead

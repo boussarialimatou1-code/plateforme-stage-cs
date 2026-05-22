@@ -1,0 +1,585 @@
+{% extends 'admin_base.html.twig' %}
+
+{% block title %}Examen de Dossier - Cour Suprême{% endblock %}
+{% block header_title %}Examen du Dossier : {{ dossier.reference }}{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .avis-radio-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-top: 10px;
+    }
+    .avis-item {
+        flex: 1;
+        min-width: 150px;
+        position: relative;
+    }
+    .avis-item input[type="radio"] {
+        display: none;
+    }
+    .avis-label {
+        display: block;
+        padding: 15px 10px;
+        text-align: center;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        background: white;
+        height: 100%;
+    }
+
+    /* Couleurs des labels */
+    .avis-item:nth-child(1) .avis-label:hover, .avis-item:nth-child(1) input:checked + .avis-label { border-color: #16a34a; color: #16a34a; background: #f0fdf4; }
+    .avis-item:nth-child(2) .avis-label:hover, .avis-item:nth-child(2) input:checked + .avis-label { border-color: #f59e0b; color: #f59e0b; background: #fffbeb; }
+    .avis-item:nth-child(3) .avis-label:hover, .avis-item:nth-child(3) input:checked + .avis-label { border-color: #dc2626; color: #dc2626; background: #fef2f2; }
+
+    .avis-item input:checked + .avis-label {
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+
+    .doc-card {
+        background: #fff;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+        transition: all 0.2s ease;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    .doc-card:hover {
+        border-color: #cbd5e1;
+        box-shadow: 0 4px 166px rgba(0,0,0,0.08);
+    }
+    .doc-header {
+        background: #f8fafc;
+        padding: 12px 16px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .doc-type-badge {
+        display: inline-block;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #475569;
+        background: #e2e8f0;
+        padding: 3px 10px;
+        border-radius: 4px;
+    }
+    .doc-body {
+        padding: 14px 16px;
+        flex: 1;
+        display: flex;
+        align-items: center;
+    }
+    .doc-filename {
+        font-size: 0.82rem;
+        color: #334155;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-weight: 500;
+    }
+    .doc-footer {
+        display: flex;
+        gap: 8px;
+        padding: 12px 16px;
+        border-top: 1px solid #e2e8f0;
+        background: #fafbfc;
+    }
+    .btn-doc {
+        flex: 1;
+        padding: 7px 12px;
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        color: #475569;
+        font-size: 0.78rem;
+        font-weight: 500;
+        text-align: center;
+        text-decoration: none;
+        transition: all 0.15s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        cursor: pointer;
+    }
+    .btn-doc:hover {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+        color: #1e293b;
+    }
+    .empty-docs {
+        text-align: center;
+        padding: 60px 20px;
+        background: #f8fafc;
+        border-radius: 10px;
+        border: 1px dashed #e2e8f0;
+    }
+    .empty-docs i {
+        font-size: 36px;
+        color: #94a3b8;
+        margin-bottom: 12px;
+    }
+    .empty-docs p {
+        color: #64748b;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    .evaluation-container {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+    .eval-header {
+        text-align: center;
+        padding: 24px 20px;
+        background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+        border-radius: 12px 12px 0 0;
+        border: 1px solid #e2e8f0;
+        border-bottom: none;
+    }
+    .eval-header i {
+        font-size: 32px;
+        color: #475569;
+        margin-bottom: 8px;
+    }
+    .eval-header h4 {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0 0 4px 0;
+    }
+    .eval-subtitle {
+        font-size: 0.8rem;
+        color: #64748b;
+        margin: 0;
+    }
+    .eval-section {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-top: none;
+        padding: 24px;
+    }
+    .eval-section:last-of-type {
+        border-bottom: 1px solid #e2e8f0;
+        border-radius: 0 0 12px 12px;
+    }
+    .eval-section-title {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #334155;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 16px;
+    }
+    .eval-section-title i {
+        margin-right: 8px;
+        color: #64748b;
+    }
+    .avis-options {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .avis-option {
+        display: block;
+        cursor: pointer;
+    }
+    .avis-option input[type="radio"] {
+        display: none;
+    }
+    .avis-content {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 16px 18px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+        background: #fafbfc;
+    }
+    .avis-option:hover .avis-content {
+        border-color: #cbd5e1;
+        background: #f8fafc;
+    }
+    .avis-option input:checked + .avis-content {
+        border-color: #1e293b;
+        background: #f8fafc;
+    }
+    .avis-icon {
+        font-size: 22px;
+        flex-shrink: 0;
+    }
+    .avis-option input[value="favorable"]:checked + .avis-content {
+        border-color: #16a34a;
+        background: #f0fdf4;
+    }
+    .avis-option input[value="favorable"]:checked + .avis-content .avis-icon {
+        color: #16a34a;
+    }
+    .avis-option input[value="reserve"]:checked + .avis-content {
+        border-color: #f59e0b;
+        background: #fffbeb;
+    }
+    .avis-option input[value="reserve"]:checked + .avis-content .avis-icon {
+        color: #f59e0b;
+    }
+    .avis-option input[value="defavorable"]:checked + .avis-content {
+        border-color: #dc2626;
+        background: #fef2f2;
+    }
+    .avis-option input[value="defavorable"]:checked + .avis-content .avis-icon {
+        color: #dc2626;
+    }
+    .avis-text {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #334155;
+    }
+    .eval-textarea {
+        width: 100%;
+        padding: 14px 16px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-family: inherit;
+        resize: vertical;
+        transition: border-color 0.2s ease;
+        line-height: 1.6;
+        color: #334155;
+    }
+    .eval-textarea:focus {
+        outline: none;
+        border-color: #1e293b;
+    }
+    .eval-textarea::placeholder {
+        color: #94a3b8;
+    }
+    .eval-hint {
+        font-size: 0.78rem;
+        color: #94a3b8;
+        margin: 8px 0 0 0;
+    }
+    .eval-actions {
+        display: flex;
+        gap: 12px;
+        padding: 20px 24px;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-top: none;
+        border-bottom-left-radius: 12px;
+        border-bottom-right-radius: 12px;
+    }
+    .btn-eval-cancel {
+        padding: 12px 24px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        color: #475569;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.15s ease;
+    }
+    .btn-eval-cancel:hover {
+        background: #f1f5f9;
+        color: #1e293b;
+    }
+    .btn-eval-submit {
+        flex: 1;
+        padding: 12px 24px;
+        border-radius: 8px;
+        border: none;
+        background: #1e293b;
+        color: #fff;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .btn-eval-submit:hover {
+        background: #334155;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+    <div class="mb-3">
+        <a href="{{ path('app_evaluator_evaluations_list') }}" class="btn btn-default btn-sm">
+            <i class="fas fa-arrow-left mr-1"></i> Retour à la liste
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <!-- Profil Candidat -->
+            <div class="card card-primary card-outline shadow-sm">
+                <div class="card-body box-profile">
+                    <div class="text-center">
+                        <i class="fas fa-user-circle fa-4x text-muted"></i>
+                    </div>
+                    <h3 class="profile-username text-center">
+                        {% if dossier.candidat %}
+                            {{ dossier.candidat.nom }} {{ dossier.candidat.prenom }}
+                        {% else %}
+                            Candidat Inconnu
+                        {% endif %}
+                    </h3>
+                    <p class="text-muted text-center">{{ dossier.candidat.email ?? 'N/A' }}</p>
+
+                    <ul class="list-group list-group-unbordered mb-3">
+                        <li class="list-group-item">
+                            <b>Téléphone</b> <a class="float-right text-dark">{{ dossier.candidat.telephone ?? 'N/A' }}</a>
+                        </li>
+                        <li class="list-group-item">
+                            <b>Sexe</b> <a class="float-right text-dark">{{ dossier.candidat.sexe ?? 'N/A' }}</a>
+                        </li>
+                        <li class="list-group-item">
+                            <b>Niveau</b> <a class="float-right text-dark">{{ dossier.candidat.niveau ?? 'N/A' }}</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Infos Cursus -->
+            <div class="card card-primary shadow-sm">
+                <div class="card-header">
+                    <h3 class="card-title">Cursus Académique</h3>
+                </div>
+                <div class="card-body text-sm">
+                    <strong><i class="fas fa-university mr-1"></i> Établissement</strong>
+                    <p class="text-muted">{{ dossier.candidat.etablissement ?? 'N/A' }}</p>
+                    <hr>
+                    <strong><i class="fas fa-book mr-1"></i> Filière</strong>
+                    <p class="text-muted">{{ dossier.candidat.filiere ?? 'N/A' }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header p-2">
+                    <ul class="nav nav-pills" id="dossierTabs">
+                        <li class="nav-item"><a class="nav-link active" href="#documents" data-toggle="tab">Pièces Jointes</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#noter" data-toggle="tab">{% if dossier.evaluations|length > 0 %}Réévaluer / Décider{% else %}Évaluer le Dossier{% endif %}</a></li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content">
+                        <!-- Documents Tab -->
+                        <div class="active tab-pane" id="documents">
+                            <div class="row">
+                                {% for doc in dossier.documents %}
+                                    <div class="col-md-4 col-sm-6 mb-3">
+                                        <div class="doc-card">
+                                            <div class="doc-header">
+                                                <div class="doc-type-badge">{{ doc.type.value }}</div>
+                                            </div>
+                                            <div class="doc-body">
+                                                <p class="doc-filename" title="{{ doc.nomOriginal }}">{{ doc.nomOriginal }}</p>
+                                            </div>
+                                            <div class="doc-footer">
+                                                <a href="{{ path('app_admin_document_view', {id: doc.id}) }}" target="_blank" class="btn-doc" title="Visualiser">
+                                                    <i class="fas fa-eye"></i> Voir
+                                                </a>
+                                                <a href="{{ path('app_document_download', {id: doc.id}) }}" class="btn-doc" title="Télécharger">
+                                                    <i class="fas fa-download"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="col-12">
+                                        <div class="empty-docs">
+                                            <i class="fas fa-file-alt"></i>
+                                            <p>Aucun document n'a été uploadé pour ce dossier.</p>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Noter Tab -->
+                        <div class="tab-pane" id="noter">
+                            {% if dossier.evaluations|length > 0 %}
+                                <div class="mb-4">
+                                    <h5 class="text-muted mb-3"><i class="fas fa-history mr-2"></i> Historique des avis</h5>
+                                    {% for eval in dossier.evaluations %}
+                                        <div class="p-3 border rounded mb-2 bg-light shadow-sm">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <strong>
+                                                    {% if eval.evaluateur %}
+                                                        {{ eval.evaluateur.prenom }} {{ eval.evaluateur.nom }}
+                                                    {% else %}
+                                                        Évaluateur (compte supprimé)
+                                                    {% endif %}
+                                                </strong>
+                                                <span class="badge badge-secondary">{{ eval.dateEvaluation|date('d/m/Y H:i') }}</span>
+                                            </div>
+                                            <div class="mt-2">
+                                                {% set avis_badge = 'badge-info' %}
+                                                {% if eval.avis.value == 'favorable' %}{% set avis_badge = 'badge-success' %}
+                                                {% elseif eval.avis.value == 'defavorable' %}{% set avis_badge = 'badge-danger' %}
+                                                {% elseif eval.avis.value == 'reserve' %}{% set avis_badge = 'badge-warning' %}{% endif %}
+                                                Avis : <span class="badge {{ avis_badge }}">{{ eval.avis.getLabel() }}</span>
+                                            </div>
+                                            {% if eval.commentaire %}
+                                                <div class="mt-2 text-sm text-dark p-2 bg-white rounded border italic" style="font-style: italic; font-size: 0.9rem;">
+                                                    "{{ eval.commentaire }}"
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                    <hr class="my-4">
+                                </div>
+                            {% endif %}
+
+                            {% if canEvaluate %}
+                                <div class="evaluation-container">
+                                    <div class="eval-header">
+                                        <i class="fas fa-clipboard-check"></i>
+                                        <h4>{% if dossier.evaluations|length > 0 %}Nouvelle Évaluation{% else %}Évaluation du dossier{% endif %}</h4>
+                                        <p class="eval-subtitle">Référence : {{ dossier.reference }}</p>
+                                    </div>
+
+                                    {{ form_start(form) }}
+                                        <div class="eval-section">
+                                            <div class="avis-options">
+                                                {% for child in form.avis %}
+                                                    <label class="avis-option" for="{{ child.vars.id }}">
+                                                        <input type="radio"
+                                                               id="{{ child.vars.id }}"
+                                                               name="{{ child.vars.full_name }}"
+                                                               value="{{ child.vars.value }}"
+                                                               {{ form.avis.vars.value == child.vars.value ? 'checked' : '' }}
+                                                               class="avis-radio">
+                                                        <span class="avis-content">
+                                                            <span class="avis-icon">
+                                                                {% if child.vars.value == 'favorable' %}
+                                                                    <i class="fas fa-check-circle"></i>
+                                                                {% elseif child.vars.value == 'reserve' %}
+                                                                    <i class="fas fa-exclamation-triangle"></i>
+                                                                {% else %}
+                                                                    <i class="fas fa-times-circle"></i>
+                                                                {% endif %}
+                                                            </span>
+                                                            <span class="avis-text">{{ child.vars.label }}</span>
+                                                        </span>
+                                                    </label>
+                                                {% endfor %}
+                                            </div>
+                                            {{ form_errors(form.avis) }}
+                                        </div>
+
+                                        <div class="eval-section">
+                                            <label class="eval-section-title" for="{{ form.commentaire.vars.id }}">
+                                                <i class="fas fa-comment-alt"></i>
+                                                Commentaire / Appréciation
+                                            </label>
+                                            <textarea name="{{ form.commentaire.vars.full_name }}"
+                                                      id="{{ form.commentaire.vars.id }}"
+                                                      class="eval-textarea"
+                                                      rows="5"
+                                                      placeholder="Ajoutez vos remarques sur le dossier...">{{ form.commentaire.vars.value ?: '' }}</textarea>
+                                            {{ form_errors(form.commentaire) }}
+                                            <p class="eval-hint">Obligatoire en cas d'avis Réservé ou Défavorable.</p>
+                                        </div>
+
+                                        <!-- Choix de structure (affichés dynamiquement) -->
+                                        <div id="eval-section-id" class="eval-section"  style="display: none;">
+                                            <div>
+                                                <label class="eval-section-title">
+                                                    <i class="fas fa-calendar-alt"></i>
+                                                    Structure de destination du stagiaire
+                                                </label>
+                                                <div class="row">
+                                                    <div class="col-md-12 mb-3">
+                                                        {{ form_row(form.structure) }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="eval-section-title">
+                                                    <i class="fas fa-calendar-alt"></i>
+                                                    Période de stage personnalisée
+                                                </label>
+                                                <div class="row">
+                                                    <div class="col-md-12 mb-3">
+                                                        {{ form_label(form.dateDebutStage) }}
+                                                        {{ form_widget(form.dateDebutStage) }}
+                                                        <p class="eval-hint mt-1">La date de fin sera calculée automatiquement selon la durée demandée par le candidat (<b>{{ dossier.dureeMois }} mois</b>).</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+
+                                        <div class="eval-actions">
+                                            <a href="{{ path('app_evaluator_evaluations_list') }}" class="btn-eval-cancel">
+                                                Annuler
+                                            </a>
+                                            <button type="submit" class="btn-eval-submit">
+                                                <i class="fas fa-paper-plane"></i> Soumettre la décision
+                                            </button>
+                                        </div>
+                                    {% do form.avis.setRendered %}
+                                    {% do form.commentaire.setRendered %}
+                                    {{ form_end(form) }}
+                                </div>
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                                    <h4>Dossier Clôturé</h4>
+                                    <p class="text-muted">Ce dossier a déjà fait l'objet d'une décision finale ({{ dossier.statut.getLabel() }}).</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Gestion de l'ancrage #validation pour ouvrir l'onglet automatiquement
+        const hash = window.location.hash;
+        if (hash) {
+            const targetTab = document.querySelector('#dossierTabs a[href="' + hash + '"]');
+            if (targetTab) {
+                $(targetTab).tab('show');
+            }
+        }
+
+        // Toggle des dates selon l'avis sélectionné
+        const avisRadios = document.querySelectorAll('.avis-radio');
+        const section = document.getElementById('eval-section-id');
+
+        avisRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === 'favorable' && this.checked) {
+                    section.style.display = 'block';
+                } else {
+                    section.style.display = 'none';
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

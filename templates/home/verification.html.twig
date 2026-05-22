@@ -1,0 +1,133 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Suivre mon dossier - Cour Suprême du Bénin{% endblock %}
+
+{% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+    <style>
+        .verification-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            background-color: #f8faff;
+            padding: 20px;
+        }
+        .verification-card {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+        }
+        .verification-card h2 {
+            color: #1a2b4b;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        .verification-card p {
+            color: #64748b;
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+        .code-input-group {
+            margin-bottom: 25px;
+        }
+        .code-input-group label {
+            display: block;
+            text-align: left;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #334155;
+        }
+        .code-control {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            text-align: center;
+            letter-spacing: 5px;
+            font-weight: 700;
+            transition: border-color 0.2s;
+        }
+        .code-control:focus {
+            outline: none;
+            border-color: #16a34a;
+        }
+        .btn-verify {
+            background-color: #16a34a;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-weight: 700;
+            width: 100%;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .btn-verify:hover {
+            transform: translateY(-2px);
+            background-color: #15803d;
+        }
+        .forgot-code {
+            display: block;
+            margin-top: 20px;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 0.85rem;
+        }
+        .forgot-code:hover {
+            color: #1a2b4b;
+            text-decoration: underline;
+        }
+        .success-box {
+            background-color: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }
+        .success-box h3 {
+            color: #16a34a;
+            font-size: 1rem;
+            margin-bottom: 5px;
+        }
+        .access-code-display {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #1a2b4b;
+            letter-spacing: 2px;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="verification-container">
+        <div class="verification-card">
+            <a href="{{ path('app_home') }}">
+                <img src="{{ asset('images/logo_cour_supreme.jpeg') }}" alt="Logo" style="height: 60px; margin-bottom: 20px;">
+            </a>
+            
+            {% for message in app.flashes('access_code') %}
+                {# On ne fait plus rien ici car le code est envoyé par mail #}
+            {% endfor %}
+
+            <h2>Suivre mon dossier</h2>
+            <p>Entrez le code de suivi qui vous a été transmis lors de votre inscription pour accéder à votre dossier.</p>
+
+            <form action="{{ path('app_suivi') }}" method="POST">
+                <div class="code-input-group">
+                    <label for="code">Votre code de suivi</label>
+                    <input type="text" name="code" id="code" class="code-control" placeholder="000000" maxlength="6" required pattern="\d{6}">
+                </div>
+                
+                <button type="submit" class="btn-verify">Accéder à mon dossier</button>
+            </form>
+
+            <a href="{{ path('app_recover_code') }}" class="forgot-code">Code de suivi perdu ?</a>
+        </div>
+    </div>
+{% endblock %}

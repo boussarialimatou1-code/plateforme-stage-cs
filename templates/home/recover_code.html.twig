@@ -1,0 +1,106 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Récupérer mon code de suivi - Cour Suprême{% endblock %}
+
+{% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+    <style>
+        .verification-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            background-color: #f8faff;
+            padding: 20px;
+        }
+        .verification-card {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+        }
+        .verification-card h2 {
+            color: #1a2b4b;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        .verification-card p {
+            color: #64748b;
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+        .code-input-group {
+            margin-bottom: 25px;
+        }
+        .code-input-group label {
+            display: block;
+            text-align: left;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #334155;
+        }
+        .code-control {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        .code-control:focus {
+            outline: none;
+            border-color: #16a34a;
+        }
+        .btn-verify {
+            background-color: #16a34a;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-weight: 700;
+            width: 100%;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .btn-verify:hover {
+            transform: translateY(-2px);
+            background-color: #15803d;
+        }
+        .back-link {
+            display: block;
+            margin-top: 20px;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 0.85rem;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="verification-container">
+        <div class="verification-card">
+            <a href="{{ path('app_home') }}">
+                <img src="{{ asset('images/logo_cour_supreme.jpeg') }}" alt="Logo" style="height: 60px; margin-bottom: 20px;">
+            </a>
+            
+            <h2>Code de suivi perdu ?</h2>
+            <p>Saisissez l'adresse email utilisée lors de votre inscription. Nous vous renverrons votre code de suivi.</p>
+
+            <form action="{{ path('app_recover_code') }}" method="POST">
+                <input type="hidden" name="_token" value="{{ csrf_token('recover_code') }}">
+                
+                <div class="code-input-group">
+                    <label for="email">Votre adresse email</label>
+                    <input type="email" name="email" id="email" class="code-control" placeholder="exemple@mail.com" required>
+                </div>
+                
+                <button type="submit" class="btn-verify">Récupérer mon code</button>
+            </form>
+
+            <a href="{{ path('app_verification') }}" class="back-link">Retour à la saisie du code</a>
+        </div>
+    </div>
+{% endblock %}

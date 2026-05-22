@@ -1,0 +1,542 @@
+{% extends 'admin_base.html.twig' %}
+
+{% block title %}Préparation de la Lettre - {{ dossier.reference }}{% endblock %}
+{% block header_title %}Rédaction de la Lettre Officielle{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .letter-paper {
+        background: white;
+        width: 21cm;
+        min-height: 29.7cm;
+        padding: 1.5cm;
+        margin: 20px auto;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        position: relative;
+        font-family: "Times New Roman", Times, serif;
+        color: black;
+        line-height: 1.5;
+        font-size: 12pt;
+    }
+
+    .tricolore-sidebar {
+        position: absolute;
+        left: 0.8cm;
+        top: 1cm;
+        bottom: 1cm;
+        width: 6px;
+        border-left: 2px solid #008751;
+        border-right: 2px solid #E8112D;
+        background-color: #FCD116;
+    }
+
+    .letter-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 30px;
+    }
+
+    .header-left {
+        text-align: center;
+        width: 48%;
+    }
+
+    .header-right {
+        text-align: right;
+        width: 48%;
+        padding-top: 10px;
+    }
+
+    .header-right .date-lieu {
+        font-style: italic;
+        margin-bottom: 30px;
+    }
+
+    .header-right .dest-a {
+        font-weight: bold;
+        font-size: 14pt;
+        margin-bottom: 10px;
+        margin-right: 60px;
+    }
+
+    .header-right .destinataire-block {
+        text-align: left;
+        border-left: 1px solid #ccc;
+        padding-left: 15px;
+        margin-left: auto;
+        width: fit-content;
+        min-width: 200px;
+    }
+
+    .logo-img { width: 70px; margin: 10px 0; }
+    .institution-name { font-weight: bold; font-size: 14pt; text-decoration: underline; }
+    
+    .editable-ref {
+        border-bottom: 1px dashed #ccc;
+        min-width: 100px;
+        display: inline-block;
+        padding: 0 5px;
+        font-weight: bold;
+        color: #001a33;
+    }
+    .editable-ref:focus {
+        outline: none;
+        border-bottom: 2px solid var(--supreme-blue);
+        background: #f0f7ff;
+    }
+
+    .letter-content { text-align: justify; margin-top: 40px; }
+    .letter-paragraph { margin-bottom: 15px; text-indent: 1.5cm; }
+
+    .signature-area {
+        margin-top: 50px;
+        float: right;
+        width: 300px;
+        text-align: center;
+        position: relative;
+    }
+    
+    .sign-canvas-container {
+        border: 1px dashed #ddd;
+        background: #fafafa;
+        cursor: crosshair;
+        margin: 10px 0;
+        position: relative;
+        height: 120px;
+    }
+    .sign-canvas-container:hover { border-color: #aaa; }
+    
+    #signature-pad {
+        width: 100%;
+        height: 100%;
+    }
+
+    .sign-label { font-weight: bold; text-decoration: underline; }
+    .sign-name { font-weight: bold; margin-top: 10px; }
+
+    .controls-panel {
+        position: sticky;
+        top: 20px;
+        z-index: 1000;
+    }
+
+    .destinataire-name {
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 12pt;
+        display: block;
+        margin-bottom: 3px;
+    }
+
+    .objet-section {
+        font-weight: bold;
+        margin-top: 30px;
+        font-size: 12pt;
+        text-align: left;
+    }
+
+    .salutation {
+        font-weight: bold;
+        margin-bottom: 20px;
+        text-align: left;
+    }
+
+    .letter-footer {
+        position: absolute;
+        bottom: 1cm;
+        left: 1.5cm;
+        right: 1.5cm;
+        text-align: center;
+        font-size: 8pt;
+        border-top: 2px solid #FCD116;
+        padding-top: 10px;
+    }
+    .letter-footer .legal-mention {
+        font-style: italic;
+        font-size: 7pt;
+        margin-top: 5px;
+        display: block;
+        color: #444;
+    }
+
+    .stamp-on-letter {
+        position: absolute;
+        left: 5px;
+        top: -50px;
+        width: 100px;
+        height: 100px;
+        object-fit: contain;
+        z-index: 10;
+        opacity: 0.55;
+        pointer-events: none;
+    }
+
+    @media print {
+        .controls-panel { display: none; }
+        .content-wrapper { margin-left: 0 !important; }
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="row">
+    <div class="col-md-9">
+        <div class="letter-paper" id="letter-draft">
+            <div class="tricolore-sidebar"></div>
+
+            <div class="letter-header">
+                <div class="header-left">
+                    <div style="color: #008751; font-weight: bold; font-size: 11pt;">RÉPUBLIQUE DU BÉNIN</div>
+                    <div style="font-size: 9pt; font-style: italic;">Fraternité - Justice - Travail</div>
+                    <img src="{{ asset('images/logo_cour_supreme.jpeg') }}" class="logo-img" alt="Logo Cour Suprême">
+                    <div class="institution-name">COUR SUPRÊME</div>
+                    <div style="font-weight: bold; font-size: 10pt;">SECRÉTARIAT GÉNÉRAL</div>
+                    <div style="margin-top: 15px; font-weight: bold;">
+                        N° <span contenteditable="true" id="ref-number" class="editable-ref">{{ dossier.numeroOfficiel ?: '________' }}</span>/PCS/SG/DERSFC/S
+                    </div>
+                </div>
+
+                <div class="header-right">
+                    <div class="date-lieu">Porto-Novo, le {{ "now"|date('d/m/Y') }}</div>
+                    <div class="dest-a">À</div>
+                    <div class="destinataire-block">
+                        <span class="destinataire-name">
+                            {% if dossier.candidat %}
+                                {{ dossier.candidat.sexe == 'M' ? 'Monsieur' : 'Madame' }}<br>
+                                {{ dossier.candidat.nom }} {{ dossier.candidat.prenom }}
+                            {% else %}
+                                CANDIDAT INCONNU
+                            {% endif %}
+                        </span>
+                        <span style="font-size: 10pt;">Tél : {{ dossier.candidat.telephone ?? 'N/A' }}</span><br>
+                        <span style="font-size: 10pt;">E-mail : {{ dossier.candidat.email ?? 'N/A' }}</span><br>
+                        <span style="font-weight: bold; margin-top: 5px; display: inline-block;">PORTO-NOVO</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="objet-section">
+                <u>OBJET</u> : Autorisation de stage.
+            </div>
+
+            <div class="letter-content">
+                <div class="salutation">
+                    {% if dossier.candidat %}
+                        {{ dossier.candidat.sexe == 'M' ? 'Monsieur' : 'Madame' }},
+                    {% else %}
+                        Madame, Monsieur,
+                    {% endif %}
+                </div>
+
+                <div class="letter-paragraph">
+                    En réponse à votre correspondance du 
+                    <strong>
+                        {{ dossier.dateCreation|date('d') }}
+                        {% set mois_num = dossier.dateCreation|date('m') %}
+                        {% set mois_fr = {
+                            '01': 'janvier', '02': 'février', '03': 'mars',
+                            '04': 'avril', '05': 'mai', '06': 'juin',
+                            '07': 'juillet', '08': 'août', '09': 'septembre',
+                            '10': 'octobre', '11': 'novembre', '12': 'décembre'
+                        } %}
+                        {{ mois_fr[mois_num] }}
+                        {{ dossier.dateCreation|date('Y') }}
+                    </strong>, 
+                    j'ai l'honneur de vous notifier mon avis favorable pour un stage de 
+                    <strong>{{ dossier.dureeMois }} mois</strong> au sein du 
+                    <strong>{{ dossier.domaine }}</strong> de la Cour suprême.
+                </div>
+
+                <div class="letter-paragraph">
+                    En conséquence, je vous invite à vous rapprocher de la Direction des Études, de la Recherche, 
+                    des Statistiques et de la Formation Continue de ladite Cour pour compter du 
+                    <strong>
+                        {% if dossier.dateDebutStage %}
+                            {{ dossier.dateDebutStage|date('d') }}
+                            {{ mois_fr[dossier.dateDebutStage|date('m')] }}
+                            {{ dossier.dateDebutStage|date('Y') }}
+                        {% else %}
+                            ______________
+                        {% endif %}
+                    </strong>, 
+                    à 08 heures précises, en vue de l'accomplissement des formalités requises.
+                </div>
+
+                <div class="letter-paragraph">
+                    À l'issue de ce stage de <strong>{{ dossier.dureeMois }} mois</strong> couvrant la période du 
+                    <strong>{{ dossier.dateDebutStage ? dossier.dateDebutStage|date('d/m/Y') : '__/__/____' }}</strong> au 
+                    <strong>{{ dossier.dateFinStage ? dossier.dateFinStage|date('d/m/Y') : '__/__/____' }}</strong>, 
+                    vous serez tenu de produire un rapport de stage adressé à Monsieur le Président de la Cour suprême, 
+                    sous la direction du tuteur qui vous sera désigné.
+                </div>
+
+                <p style="text-indent: 1.5cm;">
+                    Veuillez agréer, 
+                    {% if dossier.candidat %}
+                        {{ dossier.candidat.sexe == 'M' ? 'Monsieur' : 'Madame' }},
+                    {% else %}
+                        Madame, Monsieur,
+                    {% endif %}
+                    l'assurance de ma considération distinguée.
+                </p>
+
+                <div class="signature-area">
+                    <img id="stamp-on-letter" class="stamp-on-letter" src="#" style="display: none;">
+
+                    <div class="sign-label">Le Secrétaire Général,</div>
+                    
+                    <div class="sign-canvas-container" id="canvas-wrapper">
+                        <canvas id="signature-pad"></canvas>
+                        {% if dossier.signatureOfficielle %}
+                            <img src="{{ dossier.signatureOfficielle }}" id="existing-signature" 
+                                 style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; background: white;">
+                        {% endif %}
+                    </div>
+                    
+                    <div class="sign-name" contenteditable="true" id="signataire-name" style="border-bottom: 1px dashed #ccc; outline: none; padding: 2px 8px; min-width: 200px; display: inline-block;">{{ signataire_nom ?? 'François-Richard David KPENOU' }}</div>
+                </div>
+
+                <div style="clear: both;"></div>
+            </div>
+
+            <div class="letter-footer">
+                TEL : (229) 20 21 26 77 / 20 21 26 78 - Fax : (229) 20 21 32 08 - 01 BP 330 RP COTONOU<br>
+                E-mail : institution@coursupreme.bj - Site web : www.coursupreme.bj
+                <span class="legal-mention">
+                    « La Cour Suprême est la plus haute Juridiction de l'Etat en matière administrative et judiciaire. »<br>
+                    Art. 131 al. 1er de la Constitution du 11 décembre 1990 modifiée par la loi n°2019-40 du 07 novembre 2019
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="controls-panel">
+            <div class="card card-primary card-outline">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-tools mr-1"></i> Outils</h3>
+                </div>
+                <div class="card-body">
+                    <a href="{{ path('app_evaluator_dossier_preview_letter', {id: dossier.id}) }}" 
+                       target="_blank" 
+                       class="btn btn-block btn-outline-primary mb-2">
+                        <i class="fas fa-eye mr-1"></i> Prévisualiser le PDF
+                    </a>
+
+                    <button type="button" class="btn btn-block btn-outline-secondary mb-3" id="clear-btn">
+                        <i class="fas fa-eraser mr-1"></i> Effacer la signature
+                    </button>
+
+                    <div class="mb-3">
+                        <label class="text-xs font-weight-bold text-muted"><i class="fas fa-stamp mr-1"></i> Sceau / Tampon</label>
+                        
+                        <div class="btn btn-sm btn-outline-danger btn-block mb-1" id="btn-use-svg-stamp">
+                            <i class="fas fa-circle"></i> Appliquer le sceau officiel
+                        </div>
+                        
+                        <div class="btn btn-sm btn-outline-secondary btn-block mb-1" id="btn-remove-stamp">
+                            <i class="fas fa-times"></i> Retirer le sceau
+                        </div>
+                        
+                        <div class="upload-box mt-2" id="stamp-drop-area" onclick="document.getElementById('stamp-file-input').click()" style="padding: 10px; text-align: center; border: 1px dashed #cbd5e1; border-radius: 8px; cursor: pointer; font-size: 0.75rem;">
+                            <i class="fas fa-upload text-muted"></i> Importer une image
+                            <input type="file" id="stamp-file-input" accept="image/*" style="display: none">
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="alert alert-info text-xs">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Cliquez sur le numéro pour le modifier.<br>
+                        Dessinez dans le cadre pour signer.
+                    </div>
+
+                    <button type="button" class="btn btn-block btn-success btn-lg shadow" id="save-btn">
+                        <i class="fas fa-check-circle mr-1"></i> Valider et Enregistrer
+                    </button>
+                    
+                    <a href="{{ path('app_evaluator_evaluations_list') }}" class="btn btn-block btn-link text-muted mt-2">
+                        <i class="fas fa-arrow-left mr-1"></i> Annuler
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form id="final-form" method="POST" action="{{ path('app_evaluator_dossier_save_letter', {id: dossier.id}) }}" style="display: none;">
+    <input type="hidden" name="numero_officiel" id="input-numero">
+    <input type="hidden" name="signature_data" id="input-signature">
+    <input type="hidden" name="signataire_nom" id="input-signataire-nom">
+    <input type="hidden" name="tampon_data" id="input-tampon">
+</form>
+{% endblock %}
+
+{% block javascripts %}
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const canvas = document.getElementById('signature-pad');
+        const wrapper = document.getElementById('canvas-wrapper');
+        const existingSign = document.getElementById('existing-signature');
+        
+        const signaturePad = new SignaturePad(canvas, {
+            backgroundColor: 'rgb(255, 255, 255)',
+            penColor: 'rgb(0, 0, 102)',
+            minWidth: 1.0,
+            maxWidth: 2.5
+        });
+
+        function resizeCanvas() {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = wrapper.offsetWidth * ratio;
+            canvas.height = wrapper.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
+            signaturePad.clear();
+            const context = canvas.getContext("2d");
+            context.fillStyle = "rgb(255, 255, 255)";
+            context.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        canvas.addEventListener('mousedown', () => {
+            if (existingSign) existingSign.style.display = 'none';
+        });
+        canvas.addEventListener('touchstart', () => {
+            if (existingSign) existingSign.style.display = 'none';
+        });
+
+        document.getElementById('clear-btn').addEventListener('click', () => {
+            signaturePad.clear();
+            const context = canvas.getContext("2d");
+            context.fillStyle = "rgb(255, 255, 255)";
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            if (existingSign) existingSign.style.display = 'none';
+        });
+
+        const stampOnLetter = document.getElementById('stamp-on-letter');
+        let stampDataUrl = '';
+
+        // Fonction pour appliquer le sceau
+        function applyStampSvg() {
+            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            svg.setAttribute("width", "200");
+            svg.setAttribute("height", "200");
+            svg.setAttribute("viewBox", "0 0 200 200");
+            svg.innerHTML = `
+                <circle cx="100" cy="100" r="95" fill="none" stroke="#cc0000" stroke-width="3"/>
+                <circle cx="100" cy="100" r="70" fill="none" stroke="#cc0000" stroke-width="1.5"/>
+                <defs>
+                    <path id="sc-pt" d="M 25,100 A 75,75 0 0,1 175,100"/>
+                    <path id="sc-pb" d="M 175,100 A 75,75 0 0,1 25,100"/>
+                </defs>
+                <text font-family="Arial" font-size="11" fill="#cc0000" font-weight="bold">
+                    <textPath href="#sc-pt" startOffset="50%" text-anchor="middle">REPUBLIQUE DU BENIN</textPath>
+                </text>
+                <text font-family="Arial" font-size="14" fill="#cc0000" font-weight="bold">
+                    <textPath href="#sc-pb" startOffset="50%" text-anchor="middle">COUR SUPREME</textPath>
+                </text>
+                <text x="28" y="104" font-family="Arial" font-size="14" fill="#cc0000" text-anchor="middle">✦</text>
+                <text x="172" y="104" font-family="Arial" font-size="14" fill="#cc0000" text-anchor="middle">✦</text>
+                <text x="100" y="91" font-family="Arial" font-size="11" fill="#cc0000" font-weight="bold" text-anchor="middle">Le</text>
+                <text x="100" y="105" font-family="Arial" font-size="11" fill="#cc0000" font-weight="bold" text-anchor="middle">Secrétaire</text>
+                <text x="100" y="119" font-family="Arial" font-size="11" fill="#cc0000" font-weight="bold" text-anchor="middle">Général</text>
+            `;
+            const svgString = new XMLSerializer().serializeToString(svg);
+            const svgDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString);
+            
+            const img = new Image();
+            img.onload = function() {
+                const c = document.createElement('canvas');
+                c.width = 200; c.height = 200;
+                c.getContext('2d').drawImage(img, 0, 0);
+                stampDataUrl = c.toDataURL('image/png');
+                stampOnLetter.src = stampDataUrl;
+                stampOnLetter.style.display = 'block';
+            };
+            img.onerror = function() {
+                Swal.fire('Erreur', 'Impossible de générer le sceau.', 'error');
+            };
+            img.src = svgDataUrl;
+        }
+
+        document.getElementById('btn-use-svg-stamp').addEventListener('click', function() {
+            const btn = this;
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+            
+            setTimeout(function() {
+                applyStampSvg();
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }, 100);
+        });
+
+        document.getElementById('btn-remove-stamp').addEventListener('click', function() {
+            stampOnLetter.src = '#';
+            stampOnLetter.style.display = 'none';
+            stampDataUrl = '';
+        });
+
+        const stampFileInput = document.getElementById('stamp-file-input');
+        stampFileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    stampDataUrl = event.target.result;
+                    stampOnLetter.src = stampDataUrl;
+                    stampOnLetter.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById('save-btn').addEventListener('click', function() {
+            const numero = document.getElementById('ref-number').innerText.trim();
+            
+            if (numero === '________' || numero === '') {
+                Swal.fire('Attention', 'Veuillez renseigner le numéro officiel.', 'warning');
+                return;
+            }
+
+            if (signaturePad.isEmpty() && (!existingSign || existingSign.style.display === 'none')) {
+                Swal.fire('Attention', 'Veuillez signer la lettre avant de valider.', 'warning');
+                return;
+            }
+
+            Swal.fire({
+                title: 'Finaliser la lettre ?',
+                text: "Le numéro et la signature seront enregistrés.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                confirmButtonText: 'Oui, enregistrer',
+                cancelButtonText: 'Annuler'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('input-numero').value = numero;
+                    document.getElementById('input-signataire-nom').value = document.getElementById('signataire-name').innerText.trim();
+                    
+                    if (!signaturePad.isEmpty()) {
+                        document.getElementById('input-signature').value = signaturePad.toDataURL('image/jpeg');
+                    } else if (existingSign && existingSign.style.display !== 'none') {
+                        document.getElementById('input-signature').value = existingSign.src;
+                    }
+                    
+                    if (stampDataUrl) {
+                        document.getElementById('input-tampon').value = stampDataUrl;
+                    }
+
+                    document.getElementById('final-form').submit();
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

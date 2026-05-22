@@ -1,0 +1,598 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Suivi de Candidature - Cour Suprême du Bénin{% endblock %}
+
+{% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+    <style>
+        .suivi-container {
+            padding: 60px 0;
+            background-color: #f8faff;
+            min-height: calc(100vh - 150px);
+        }
+
+        .status-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .card-header-custom {
+            background-color: #fff;
+            padding: 30px;
+            border-bottom: 1px solid #edf2f7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .dossier-ref h1 {
+            font-size: 1.5rem;
+            color: #1a2b4b;
+            margin: 0 0 5px 0;
+            font-weight: 700;
+        }
+
+        .dossier-ref span {
+            color: #64748b;
+            font-size: 0.9rem;
+            font-family: 'Courier New', monospace;
+            background: #f1f5f9;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-en-cours {
+            background-color: #e0f2fe;
+            color: #0284c7;
+            border: 1px solid #bae6fd;
+        }
+
+        .card-body-custom {
+            padding: 40px 30px;
+        }
+
+        .timeline-wrapper {
+            position: relative;
+            margin: 20px 0 50px 0;
+            padding: 0 20px;
+        }
+
+        .timeline-track {
+            position: absolute;
+            top: 22px;
+            left: 50px;
+            right: 50px;
+            height: 3px;
+            background-color: #e2e8f0;
+            z-index: 1;
+        }
+
+        .timeline-steps {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            z-index: 2;
+        }
+
+        .timeline-step {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 160px;
+        }
+
+        .step-marker {
+            width: 44px;
+            height: 44px;
+            background: white;
+            border: 3px solid #cbd5e1;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+            position: relative;
+            color: #cbd5e1;
+        }
+
+        .timeline-step.completed .step-marker {
+            background: #16a34a;
+            border-color: #16a34a;
+            color: white;
+        }
+
+        .timeline-step.active .step-marker {
+            border-color: #06b6d4;
+            box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.15);
+            color: #06b6d4;
+        }
+
+        .timeline-step.rejected .step-marker {
+            background: #dc2626;
+            border-color: #dc2626;
+            color: white;
+        }
+
+        .step-title {
+            font-weight: 600;
+            color: #475569;
+            font-size: 0.85rem;
+            line-height: 1.3;
+        }
+
+        .timeline-step.completed .step-title,
+        .timeline-step.active .step-title {
+            color: #0f172a;
+            font-weight: 700;
+        }
+
+        .result-container {
+            margin-top: 40px;
+            padding: 30px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .result-success {
+            background-color: #f0fdf4;
+            border: 1px solid #bbf7d0;
+        }
+
+        .result-pending {
+            background-color: #ecfeff;
+            border: 1px solid #a5f3fc;
+        }
+
+        .result-refuse {
+            background-color: #fff1f2;
+            border: 1px solid #fecdd3;
+        }
+
+        .result-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .result-success .result-icon {
+            background-color: #dcfce7;
+            color: #16a34a;
+        }
+
+        .result-pending .result-icon {
+            background-color: #cffafe;
+            color: #0891b2;
+        }
+
+        .result-refuse .result-icon {
+            background-color: #ffe4e6;
+            color: #e11d48;
+        }
+
+        .result-content {
+            flex: 1;
+        }
+
+        .result-content h3 {
+            margin: 0 0 8px 0;
+            font-size: 1.25rem;
+            color: #1e293b;
+        }
+
+        .result-content p {
+            margin: 0;
+            color: #475569;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .btn-download {
+            background-color: #16a34a;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2);
+        }
+
+        .btn-download:hover {
+            background-color: #15803d;
+            transform: translateY(-2px);
+        }
+
+        .info-section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .info-item label {
+            display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #94a3b8;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .info-item div {
+            font-size: 1rem;
+            color: #1e293b;
+            font-weight: 500;
+        }
+
+        .docs-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .doc-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #f8fafc;
+        }
+
+        .doc-icon {
+            width: 36px;
+            height: 36px;
+            background: #e0f2fe;
+            color: #0284c7;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .doc-info {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .doc-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #334155;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .timeline-track { display: none; }
+            .timeline-steps {
+                flex-direction: column;
+                gap: 25px;
+                align-items: flex-start;
+                padding-left: 20px;
+                border-left: 3px solid #e2e8f0;
+            }
+            .timeline-step {
+                flex-direction: row;
+                width: 100%;
+                gap: 15px;
+                text-align: left;
+            }
+            .step-marker {
+                width: 36px;
+                height: 36px;
+                margin-bottom: 0;
+                flex-shrink: 0;
+            }
+            .result-container {
+                flex-direction: column;
+                text-align: center;
+            }
+            .btn-download {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    {# ✅ DÉTERMINATION DES ÉTATS #}
+    {% set isRefuse = dossier.statut.value == 'Rejeté' %}
+    {% set isValide = dossier.statut.value == 'Validé' %}
+    {% set isAccepte = dossier.statut.value == 'Accepté' %}
+    {% set isEnCours = dossier.statut.value in ['En attente', 'En évaluation', 'Mis en réserve'] %}
+    
+    <header>
+        <div class="container">
+            <div class="header-top" style="justify-content: center;">
+                <div class="logo-section">
+                    <a href="{{ path('app_home') }}">
+                        <img src="{{ asset('images/logo_cour_supreme.jpeg') }}" alt="Logo Cour Suprême">
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="suivi-container">
+        <div class="container">
+            <div class="status-card">
+                <div class="card-header-custom">
+                    <div class="dossier-ref">
+                        <h1>Suivi de Dossier</h1>
+                        <span>RÉF: {{ dossier.reference }}</span>
+                    </div>
+                    
+                    {# ✅ BADGE DE STATUT #}
+                    {% if isValide %}
+                        <div class="status-badge bg-success text-white">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            Stage Confirmé
+                        </div>
+                    {% elseif isAccepte %}
+                        <div class="status-badge bg-info text-white">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            En préparation
+                        </div>
+                    {% elseif isRefuse %}
+                        <div class="status-badge bg-danger text-white">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                            Non retenue
+                        </div>
+                    {% else %}
+                        <div class="status-badge status-en-cours">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            {{ dossier.statut.getLabel() }}
+                        </div>
+                    {% endif %}
+
+                    {% if isEnCours %}
+                        <a href="{{ path('app_modifier_candidature') }}" class="btn-outline" style="background-color: #f0fdf4; border-color: #bbf7d0; color: #16a34a;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                            Modifier mon dossier
+                        </a>
+                    {% endif %}
+
+                    {% if isValide %}
+                        <div class="d-flex flex-column align-items-end" style="gap: 5px;">
+                            <a href="{{ path('app_renouveler') }}" class="btn-outline" style="background-color: #eff6ff; border-color: #bfdbfe; color: #2563eb; text-decoration: none; padding: 10px 15px; border-radius: 8px; font-weight: 500; display: inline-flex; align-items: center; gap: 8px;">
+                                <twig:ux:icon name="lucide:refresh-cw" size="18" />
+                                Demander un renouvellement
+                            </a>
+                            {% if dossier.getJoursRestants() > 15 %}
+                                <span class="text-muted" style="font-size: 0.75rem; display: flex; align-items: center; gap: 4px;">
+                                    <twig:ux:icon name="lucide:calendar-clock" size="12" />
+                                    Disponible le {{ dossier.dateFinStage|date_modify('-15 days')|date('d/m/Y') }}
+                                </span>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                </div>
+
+                <div class="card-body-custom">
+                    
+                    {# ✅ TIMELINE #}
+                    <div class="timeline-wrapper">
+                        <div class="timeline-track"></div>
+                        <div class="timeline-steps">
+                            {# Étape 1 : Envoyé (toujours complété) #}
+                            <div class="timeline-step completed">
+                                <div class="step-marker">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                                </div>
+                                <div class="step-title">Dossier<br>envoyé</div>
+                            </div>
+
+                            {# Étape 2 : Reçu / En examen #}
+                            {% set isRecu = dossier.statut.value != 'En attente' %}
+                            <div class="timeline-step {{ isRecu ? 'completed' : 'active' }}">
+                                <div class="step-marker">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                </div>
+                                <div class="step-title">En cours<br>d'examen</div>
+                            </div>
+
+                            {# Étape 3 : Décision #}
+                            {% if isRefuse %}
+                                <div class="timeline-step rejected">
+                                    <div class="step-marker">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                    </div>
+                                    <div class="step-title">Candidature<br>non retenue</div>
+                                </div>
+                            {% elseif isAccepte %}
+                                <div class="timeline-step active">
+                                    <div class="step-marker">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                    </div>
+                                    <div class="step-title">Lettre en<br>préparation</div>
+                                </div>
+                            {% elseif isValide %}
+                                <div class="timeline-step completed">
+                                    <div class="step-marker" style="animation: pulse 2s infinite;">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                    </div>
+                                    <div class="step-title">Stage<br>confirmé</div>
+                                </div>
+                            {% else %}
+                                <div class="timeline-step">
+                                    <div class="step-marker">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                    </div>
+                                    <div class="step-title">Décision<br>en attente</div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {# ✅ RÉSULTAT : Accepté mais lettre en préparation #}
+                    {% if isAccepte %}
+                    <div class="result-container result-pending">
+                        <div class="result-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        </div>
+                        <div class="result-content">
+                            <h3>Votre profil a été retenu</h3>
+                            <p>
+                                Bonne nouvelle ! Votre candidature a été acceptée. Votre lettre d'autorisation officielle est en cours de préparation par nos services. Vous recevrez une notification dès qu'elle sera disponible.
+                            </p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {# ✅ RÉSULTAT : Validé et lettre disponible #}
+                    {% if isValide %}
+                    <div class="result-container result-success">
+                        <div class="result-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        </div>
+                        <div class="result-content">
+                            <h3>Stage Confirmé</h3>
+                            <p>
+                                Félicitations ! Votre stage est confirmé.
+                            </p>
+                            <div class="mt-3 p-2 bg-white rounded border d-inline-block">
+                                <small class="text-muted d-block">PÉRIODE DE STAGE :</small>
+                                <span class="font-weight-bold text-dark">
+                                    Du <b>{{ dossier.dateDebutStage|date('d/m/Y') }}</b> au <b>{{ dossier.getDateFinStage()|date('d/m/Y') }}</b>
+                                    ({{ dossier.dureeMois }} mois)
+                                </span>
+                            </div>
+                        </div>
+                        <a href="{{ path('app_candidate_download_authorization', {id: dossier.id}) }}" class="btn-download">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            Télécharger mon autorisation
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    {# ✅ RÉSULTAT : Refusé #}
+                    {% if isRefuse %}
+                    <div class="result-container result-refuse">
+                        <div class="result-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                        </div>
+                        <div class="result-content">
+                            <h3>Candidature non retenue</h3>
+                            <p>
+                                Après étude de votre dossier, nous n'avons pas pu donner une suite favorable à votre demande.
+                            </p>
+                            {% set derniereEval = dossier.getDerniereEvaluation() %}
+                            {% if derniereEval and derniereEval.commentaire %}
+                                <div class="mt-4 p-3 rounded border" style="background-color: #fef2f2; border-color: #fecaca; text-align: left;">
+                                    <strong style="color: #dc2626; display: block; margin-bottom: 5px;">Motif de la décision :</strong>
+                                    <p class="text-dark mb-0" style="font-style: italic; font-size: 0.95rem;">
+                                        "{{ derniereEval.commentaire }}"
+                                    </p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {# ✅ INFOS CANDIDAT (toujours visibles) #}
+                    <div class="info-section-title" style="margin-top: 50px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        Informations Candidat
+                    </div>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Candidat</label>
+                            <div>{{ dossier.candidat.nom }} {{ dossier.candidat.prenom }}</div>
+                        </div>
+                        <div class="info-item">
+                            <label>Type de Stage</label>
+                            <div>Stage {{ dossier.typeStage|capitalize }}</div>
+                        </div>
+                        <div class="info-item">
+                            <label>Domaine</label>
+                            <div>{{ dossier.domaine|capitalize }}</div>
+                        </div>
+                        <div class="info-item">
+                            <label>Établissement</label>
+                            <div>{{ dossier.candidat.etablissement }}</div>
+                        </div>
+                    </div>
+
+                    <div class="info-section-title">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                        Pièces Jointes
+                    </div>
+                    <div class="docs-list">
+                        {% for doc in dossier.documents %}
+                        <div class="doc-item">
+                            <div class="doc-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+                            </div>
+                            <div class="doc-info">
+                                <div class="doc-name">{{ doc.type.value }}</div>
+                                <div class="mt-1">
+                                    <a href="{{ path('app_document_view', {id: doc.id}) }}" target="_blank" class="text-primary font-weight-bold">
+                                        Consulter le fichier
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p class="footer-text">Cour Suprême de la République du Bénin</p>
+            <p class="footer-text">&copy; 2026 Tous droits réservés.</p>
+        </div>
+    </footer>
+{% endblock %}

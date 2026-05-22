@@ -1,0 +1,112 @@
+{% extends 'admin_base.html.twig' %}
+
+{% block title %}Ajouter un Agent - Cour Suprême{% endblock %}
+{% block header_title %}Création d'un Nouveau Compte Agent{% endblock %}
+
+{% block body %}
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card card-primary">
+                <div class="card-header">
+                    <h3 class="card-title">Informations de l'agent</h3>
+                </div>
+                {{ form_start(form) }}
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form_label(form.nom) }}
+                                    {{ form_widget(form.nom) }}
+                                    {{ form_errors(form.nom) }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form_label(form.prenom) }}
+                                    {{ form_widget(form.prenom) }}
+                                    {{ form_errors(form.prenom) }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            {{ form_label(form.email) }}
+                            {{ form_widget(form.email) }}
+                            {{ form_errors(form.email) }}
+                        </div>
+                        <div class="form-group">
+                            {{ form_label(form.telephone) }}
+                            {{ form_widget(form.telephone) }}
+                            {{ form_errors(form.telephone) }}
+                        </div>
+                        <div class="form-group">
+                            {{ form_label(form.roles) }}
+                            {{ form_widget(form.roles) }}
+                            {{ form_errors(form.roles) }}
+                        </div>
+
+                        {% if form.canManageAdmins is defined %}
+                            <div class="custom-control custom-checkbox mb-3" id="wrapper-can-manage-admins" style="display: none;">
+                                {{ form_widget(form.canManageAdmins) }}
+                                {{ form_label(form.canManageAdmins) }}
+                            </div>
+                        {% endif %}
+
+                        {% if form.isMainEvaluator is defined %}
+                            <div class="custom-control custom-checkbox mb-3" id="wrapper-is-main-evaluator" style="display: none;">
+                                {{ form_widget(form.isMainEvaluator) }}
+                                {{ form_label(form.isMainEvaluator) }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-primary">Créer le compte</button>
+                        <a href="{{ path('app_admin_users_list') }}" class="btn btn-link">Annuler</a>
+                    </div>
+                {{ form_end(form) }}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const rolesSelect = document.querySelector('select[name*="[roles]"]');
+            const adminWrapper = document.getElementById('wrapper-can-manage-admins');
+            const evalWrapper = document.getElementById('wrapper-is-main-evaluator');
+
+            function toggleOptions() {
+                if (!rolesSelect) return;
+                const selectedRoles = Array.from(rolesSelect.selectedOptions).map(opt => opt.value);
+                
+                if (adminWrapper) {
+                    const isAdmin = selectedRoles.includes('ROLE_ADMIN');
+                    adminWrapper.style.display = isAdmin ? 'block' : 'none';
+                    if (!isAdmin) {
+                        const cb = adminWrapper.querySelector('input[type="checkbox"]');
+                        if (cb) cb.checked = false;
+                    }
+                }
+
+                if (evalWrapper) {
+                    const isEval = selectedRoles.includes('ROLE_EVALUATEUR');
+                    evalWrapper.style.display = isEval ? 'block' : 'none';
+                    if (!isEval) {
+                        const cb = evalWrapper.querySelector('input[type="checkbox"]');
+                        if (cb) cb.checked = false;
+                    }
+                }
+            }
+
+            if (rolesSelect) {
+                rolesSelect.addEventListener('change', toggleOptions);
+                toggleOptions(); 
+                
+                if (typeof jQuery !== 'undefined') {
+                    $(rolesSelect).on('change', toggleOptions);
+                }
+            }
+        });
+    </script>
+{% endblock %}

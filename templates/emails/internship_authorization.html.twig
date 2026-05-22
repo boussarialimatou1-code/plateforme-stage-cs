@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            margin: 0;
+            size: A4;
+        }
+        body {
+            font-family: 'Times New Roman', serif;
+            font-size: 12pt;
+            line-height: 1.5;
+            color: #000;
+            margin: 0;
+            padding: 0;
+        }
+        .page {
+            padding: 1.5cm 1.5cm 0.8cm 2.2cm;
+            position: relative;
+            min-height: 26.5cm;
+            box-sizing: border-box;
+            page-break-after: avoid;
+        }
+
+        .tricolore-line {
+            position: absolute;
+            left: 0.8cm;
+            top: 1cm;
+            bottom: 0;
+            width: 5px;
+            border-left: 2px solid #008751;
+            border-right: 2px solid #E8112D;
+            background-color: #FCD116;
+            z-index: 10;
+        }
+
+        .header-section {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .header-left {
+            float: left;
+            width: 48%;
+            text-align: center;
+        }
+        .header-right {
+            float: right;
+            width: 48%;
+            text-align: center;
+        }
+        .clear { clear: both; }
+
+        .republique { font-weight: bold; font-size: 11pt; color: #008751; margin-bottom: 1px; }
+        .devise { font-size: 9pt; font-style: italic; margin-bottom: 10px; }
+        .institution { font-weight: bold; font-size: 13pt; margin-bottom: 3px; text-decoration: underline; }
+        .service { font-size: 10pt; text-transform: uppercase; font-weight: bold; }
+        .reference { margin-top: 10px; font-weight: bold; font-size: 11pt; }
+
+        .logo-container { margin: 8px 0; }
+        .logo { width: 70px; }
+
+        .date-lieu { font-style: italic; margin-bottom: 25px; font-size: 11pt; }
+
+        .dest-a { font-weight: bold; font-size: 13pt; margin-bottom: 8px; }
+        .dest-content { text-align: left; display: inline-block; }
+        .dest-name { font-weight: bold; font-size: 11pt; text-transform: uppercase; }
+        .dest-ville { font-weight: bold; margin-top: 5px; display: inline-block; }
+
+        .objet { margin-bottom: 20px; font-weight: bold; font-size: 12pt; }
+
+        .content { text-align: justify; }
+        .salutation { margin-bottom: 12px; font-weight: bold; }
+        .paragraph { margin-bottom: 12px; text-indent: 1.5cm; }
+
+        .signature-wrapper {
+            margin-top: 25px;
+            margin-bottom: 70px;
+            width: 100%;
+        }
+        .signature-block-inner {
+            width: 280px;
+            margin-left: auto;
+            text-align: center;
+            position: relative;
+        }
+        .sign-title { font-weight: bold; text-decoration: underline; margin-bottom: 5px; }
+        .signature-img { max-height: 70px; max-width: 230px; margin: 5px 0; }
+        .sign-name { font-weight: bold; font-size: 11pt; margin-top: 3px; }
+
+        {# ✅ AJOUT : Style pour le tampon dans le PDF #}
+        .tampon-img {
+            position: absolute;
+            left: -20px;
+            top: -10px;
+            width: 90px;
+            height: 90px;
+            object-fit: contain;
+            opacity: 0.5;
+            z-index: 5;
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 7pt;
+            border-top: 1.5px solid #FCD116;
+            padding: 8px 1.5cm 8px 2.2cm;
+        }
+        .legal-mention {
+            font-style: italic;
+            font-size: 6.5pt;
+            margin-top: 3px;
+            display: block;
+            color: #444;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="tricolore-line"></div>
+
+        <div class="header-section">
+            <div class="header-left">
+                <div class="republique">REPUBLIQUE DU BENIN</div>
+                <div class="devise">Fraternité - Justice - Travail</div>
+                <div class="logo-container">
+                    <img src="{{ logo_base64 }}" class="logo" alt="Logo">
+                </div>
+                <div class="institution">COUR SUPREME</div>
+                <div class="service">SECRETARIAT GENERAL</div>
+                <div class="reference">
+                    N° {{ numero_officiel }}/PCS/SG/DERSFC/S
+                </div>
+            </div>
+
+            <div class="header-right">
+                <div class="date-lieu">Porto-Novo, le {{ "now"|date('d/m/Y') }}</div>
+                <div class="dest-a">À</div>
+                <div class="dest-content">
+                    <span class="dest-name">
+                        {{ dossier.candidat.sexe == 'M' ? 'Monsieur' : 'Madame' }}<br>
+                        {{ dossier.candidat.nom }} {{ dossier.candidat.prenom }}
+                    </span><br>
+                    <span style="font-size: 9pt;">Tél : {{ dossier.candidat.telephone }}</span><br>
+                    <span style="font-size: 9pt;">E-mail : {{ dossier.candidat.email }}</span><br>
+                    <span class="dest-ville">PORTO-NOVO</span>
+                </div>
+            </div>
+            <div class="clear"></div>
+        </div>
+
+        <div class="objet"><u>OBJET</u> : Autorisation de stage.</div>
+
+        <div class="content">
+            <div class="salutation">{{ dossier.candidat.sexe == 'M' ? 'Monsieur' : 'Madame' }},</div>
+
+            <div class="paragraph">
+                En réponse à votre correspondance du <strong>{{ dossier.dateCreation|date('d F Y')|replace({
+                    'January': 'janvier', 'February': 'février', 'March': 'mars', 'April': 'avril', 'May': 'mai', 'June': 'juin',
+                    'July': 'juillet', 'August': 'août', 'September': 'septembre', 'October': 'octobre', 'November': 'novembre', 'December': 'décembre'
+                }) }}</strong>, j'ai l'honneur de vous notifier mon avis favorable pour un stage de <strong>{{ dossier.dureeMois }} mois</strong> au sein du 
+                <strong>{{ dossier.domaine|capitalize }}</strong> de la Cour suprême.
+            </div>
+
+            <div class="paragraph">
+                En conséquence, je vous invite à vous rapprocher de la Direction des Études, de la Recherche, des Statistiques et de la Formation Continue de ladite Cour pour compter du <strong>{{ dossier.dateDebutStage|date('d F Y')|replace({
+                    'January': 'janvier', 'February': 'février', 'March': 'mars', 'April': 'avril', 'May': 'mai', 'June': 'juin',
+                    'July': 'juillet', 'August': 'août', 'September': 'septembre', 'October': 'octobre', 'November': 'novembre', 'December': 'décembre'
+                }) }}</strong>, à 08 heures précises, en vue de l'accomplissement des formalités requises.
+            </div>
+
+            <div class="paragraph">
+                À l'issue de ce stage de <strong>{{ dossier.dureeMois }} mois</strong> couvrant la période du <strong>{{ dossier.dateDebutStage|date('d/m/Y') }}</strong> au <strong>{{ dossier.dateFinStage|date('d/m/Y') }}</strong>, vous serez tenu de produire un rapport de stage adressé à Monsieur le Président de la Cour suprême, sous la direction du tuteur qui vous sera désigné.
+            </div>
+
+            <div class="paragraph" style="text-indent: 0;">
+                Veuillez agréer, {{ dossier.candidat.sexe == 'M' ? 'Monsieur' : 'Madame' }}, l'assurance de ma considération distinguée.
+            </div>
+        </div>
+
+        <div class="signature-wrapper">
+            <div class="signature-block-inner">
+                {# ✅ AJOUT : Afficher le tampon s'il existe #}
+                {% if tampon_base64 %}
+                    <img src="{{ tampon_base64 }}" class="tampon-img" alt="Sceau officiel">
+                {% endif %}
+
+                <div class="sign-title">Le Secrétaire Général,</div>
+                
+                {% if signature_base64 %}
+                    <img src="{{ signature_base64 }}" class="signature-img" alt="Signature">
+                {% endif %}
+
+                <div class="sign-name">{{ signataire_nom ?? 'François-Richard David KPENOU' }}</div>
+            </div>
+        </div>
+
+        <div class="footer">
+            TEL : (229) 20 21 26 77 / 20 21 26 78 - Fax : (229) 20 21 32 08 - 01 BP 330 RP COTONOU<br>
+            E-mail : institution@coursupreme.bj - Site web : www.coursupreme.bj
+            <span class="legal-mention">
+                « La Cour Suprême est la plus haute Juridiction de l'Etat en matière administrative et judiciaire. »<br>
+                Art. 131 al. 1er de la Constitution du 11 décembre 1990 modifiée par la loi n°2019-40 du 07 novembre 2019
+            </span>
+        </div>
+    </div>
+</body>
+</html>

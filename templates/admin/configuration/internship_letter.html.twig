@@ -1,0 +1,343 @@
+{% extends 'admin_base.html.twig' %}
+
+{% block title %}Configuration Lettre de Stage - Cour Suprême{% endblock %}
+{% block header_title %}Configuration — Lettre de stage{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .signature-container {
+        border: 2px dashed #cbd5e1;
+        border-radius: 12px;
+        background: #f8fafc;
+        position: relative;
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+    .signature-pad {
+        width: 100%;
+        height: 300px;
+        cursor: crosshair;
+    }
+    .preview-signature {
+        max-width: 300px;
+        max-height: 150px;
+        border: 1px solid #e2e8f0;
+        padding: 10px;
+        background: white;
+        border-radius: 8px;
+    }
+    .nav-tabs-custom {
+        box-shadow: none;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .nav-tabs-custom > .nav-tabs {
+        background: #f1f5f9;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .nav-tabs-custom > .nav-tabs > li > a {
+        padding: 15px 25px;
+        font-weight: 600;
+        color: #64748b;
+        border-radius: 0;
+        border: none;
+    }
+    .nav-tabs-custom > .nav-tabs > li > a.active {
+        background: white;
+        color: var(--supreme-blue);
+        border-right: 1px solid #e2e8f0;
+        border-left: 1px solid #e2e8f0;
+    }
+    .btn-signature-action {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    .upload-box {
+        padding: 40px;
+        text-align: center;
+        border: 2px dashed #cbd5e1;
+        border-radius: 12px;
+        background: #fff;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    .upload-box:hover {
+        border-color: var(--supreme-blue);
+        background: #f0f9ff;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0" style="border-radius: 15px;">
+            <div class="card-body">
+                <h5 class="font-weight-bold mb-4">Gestion de la signature et du sceau</h5>
+                <p class="text-muted mb-4">
+                    La signature et le sceau ci-dessous seront utilisés sur toutes les lettres officielles.
+                </p>
+
+                <div class="nav-tabs-custom">
+                    <ul class="nav nav-tabs" id="signatureTabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="hand-tab" data-toggle="tab" href="#hand" role="tab">
+                                <i class="fas fa-pen-nib mr-2"></i> Signature manuscrite
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="photo-tab" data-toggle="tab" href="#photo" role="tab">
+                                <i class="fas fa-camera mr-2"></i> Photo / Image
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="stamp-tab" data-toggle="tab" href="#stamp" role="tab">
+                                <i class="fas fa-stamp mr-2"></i> Tampon / Sceau
+                            </a>
+                        </li>
+                    </ul>
+                    <div class="tab-content p-4">
+                        <!-- Mode 1: Hand Tracing -->
+                        <div class="tab-pane fade show active" id="hand" role="tabpanel">
+                            <div class="signature-container">
+                                <canvas id="signature-pad" class="signature-pad"></canvas>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-outline-secondary btn-signature-action" id="clear-signature">
+                                    <i class="fas fa-eraser mr-1"></i> Effacer le tracé
+                                </button>
+                                <button type="button" class="btn btn-primary btn-signature-action" id="save-hand-signature" style="background: var(--supreme-blue); border: none;">
+                                    <i class="fas fa-save mr-1"></i> Enregistrer
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Mode 2: Photo -->
+                        <div class="tab-pane fade" id="photo" role="tabpanel">
+                            <div class="upload-box" id="drop-area" onclick="document.getElementById('file-input').click()">
+                                <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                <h6>Cliquez pour importer une image</h6>
+                                <p class="text-xs text-muted">PNG ou JPG (Fond blanc recommandé)</p>
+                                <input type="file" id="file-input" accept="image/*" style="display: none">
+                            </div>
+                            <div id="upload-preview-container" class="mt-4 text-center" style="display: none;">
+                                <img id="upload-preview" src="#" alt="Aperçu" class="preview-signature mb-3">
+                                <div class="d-flex justify-content-center gap-3">
+                                    <button type="button" class="btn btn-outline-secondary btn-signature-action mr-2" onclick="resetUpload()">Changer</button>
+                                    <button type="button" class="btn btn-primary btn-signature-action" id="save-photo-signature" style="background: var(--supreme-blue); border: none;">
+                                        <i class="fas fa-save mr-1"></i> Enregistrer
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mode 3: Tampon -->
+                        <div class="tab-pane fade" id="stamp" role="tabpanel">
+                            <div class="upload-box" id="stamp-drop-area" onclick="document.getElementById('stamp-file-input').click()">
+                                <i class="fas fa-stamp fa-3x text-muted mb-3"></i>
+                                <h6>Cliquez pour importer le sceau</h6>
+                                <p class="text-xs text-muted">PNG fond transparent recommandé</p>
+                                <input type="file" id="stamp-file-input" accept="image/*" style="display: none">
+                            </div>
+                            <div id="stamp-preview-container" class="mt-4 text-center" style="display: none;">
+                                <img id="stamp-preview" src="#" alt="Aperçu" class="preview-signature mb-3">
+                                <div class="d-flex justify-content-center gap-3">
+                                    <button type="button" class="btn btn-outline-secondary btn-signature-action mr-2" onclick="resetStamp()">Changer</button>
+                                    <button type="button" class="btn btn-primary btn-signature-action" id="save-stamp" style="background: var(--supreme-blue); border: none;">
+                                        <i class="fas fa-save mr-1"></i> Enregistrer
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nom du Signataire -->
+        <div class="card shadow-sm border-0 mt-4" style="border-radius: 15px;">
+            <div class="card-body">
+                <h5 class="font-weight-bold mb-3">Nom du Signataire</h5>
+                <p class="text-muted mb-3">Ce nom apparaîtra sous la signature.</p>
+                <div class="form-group">
+                    <input type="text" id="signataire-nom" class="form-control form-control-lg" 
+                           value="{{ signataireNom ?? 'François-Richard David KPENOU' }}">
+                </div>
+                <button type="button" class="btn btn-primary" id="save-signataire" style="background: var(--supreme-blue); border: none;">
+                    <i class="fas fa-save mr-1"></i> Enregistrer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0" style="border-radius: 15px;">
+            <div class="card-header bg-white border-0 pt-4">
+                <h5 class="font-weight-bold">Signature</h5>
+            </div>
+            <div class="card-body text-center py-4">
+                {% if signature %}
+                    <img src="{{ signature }}" class="img-fluid preview-signature shadow-sm">
+                {% else %}
+                    <i class="fas fa-signature fa-3x text-light mb-3"></i>
+                    <p class="text-muted">Aucune</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 mt-4" style="border-radius: 15px;">
+            <div class="card-header bg-white border-0 pt-4">
+                <h5 class="font-weight-bold">Tampon</h5>
+            </div>
+            <div class="card-body text-center py-4">
+                {% if tampon is defined and tampon %}
+                    <img src="{{ tampon }}" class="img-fluid preview-signature shadow-sm">
+                {% else %}
+                    <i class="fas fa-stamp fa-3x text-light mb-3"></i>
+                    <p class="text-muted">Aucun</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 mt-4" style="border-radius: 15px;">
+            <div class="card-header bg-white border-0 pt-4">
+                <h5 class="font-weight-bold">Signataire</h5>
+            </div>
+            <div class="card-body text-center py-4">
+                <p class="font-weight-bold text-dark mb-0">{{ signataireNom ?? 'François-Richard David KPENOU' }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form id="signature-form" method="POST" style="display: none">
+    <input type="hidden" name="signature_data" id="signature-data-input">
+    <input type="hidden" name="signataire_nom" id="signataire-nom-input">
+    <input type="hidden" name="tampon_data" id="tampon-data-input">
+</form>
+{% endblock %}
+
+{% block javascripts %}
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const canvas = document.getElementById('signature-pad');
+        const signaturePad = new SignaturePad(canvas, {
+            backgroundColor: 'rgb(255, 255, 255)',
+            penColor: 'rgb(0, 0, 102)',
+            minWidth: 1.5,
+            maxWidth: 3.5
+        });
+
+        function resizeCanvas() {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
+            const context = canvas.getContext("2d");
+            context.fillStyle = "rgb(255, 255, 255)";
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            signaturePad.clear();
+        }
+
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        document.getElementById('clear-signature').addEventListener('click', function() {
+            signaturePad.clear();
+            const context = canvas.getContext("2d");
+            context.fillStyle = "rgb(255, 255, 255)";
+            context.fillRect(0, 0, canvas.width, canvas.height);
+        });
+
+        document.getElementById('save-hand-signature').addEventListener('click', function() {
+            if (signaturePad.isEmpty()) {
+                Swal.fire('Erreur', 'Veuillez dessiner votre signature.', 'error');
+                return;
+            }
+            submitForm(signaturePad.toDataURL('image/jpeg'));
+        });
+
+        // Photo
+        const fileInput = document.getElementById('file-input');
+        const uploadPreview = document.getElementById('upload-preview');
+        const previewContainer = document.getElementById('upload-preview-container');
+        const dropArea = document.getElementById('drop-area');
+
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    uploadPreview.src = event.target.result;
+                    previewContainer.style.display = 'block';
+                    dropArea.style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById('save-photo-signature').addEventListener('click', function() {
+            submitForm(uploadPreview.src);
+        });
+
+        window.resetUpload = function() {
+            fileInput.value = '';
+            previewContainer.style.display = 'none';
+            dropArea.style.display = 'block';
+        };
+
+        // Tampon
+        const stampFileInput = document.getElementById('stamp-file-input');
+        const stampPreview = document.getElementById('stamp-preview');
+        const stampPreviewContainer = document.getElementById('stamp-preview-container');
+        const stampDropArea = document.getElementById('stamp-drop-area');
+
+        stampFileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    stampPreview.src = event.target.result;
+                    stampPreviewContainer.style.display = 'block';
+                    stampDropArea.style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById('save-stamp').addEventListener('click', function() {
+            document.getElementById('tampon-data-input').value = stampPreview.src;
+            document.getElementById('signataire-nom-input').value = document.getElementById('signataire-nom').value.trim();
+            document.getElementById('signature-data-input').value = '';
+            document.getElementById('signature-form').submit();
+        });
+
+        window.resetStamp = function() {
+            stampFileInput.value = '';
+            stampPreviewContainer.style.display = 'none';
+            stampDropArea.style.display = 'block';
+        };
+
+        // Nom du signataire seul
+        document.getElementById('save-signataire').addEventListener('click', function() {
+            const nom = document.getElementById('signataire-nom').value.trim();
+            if (!nom) { Swal.fire('Attention', 'Veuillez entrer un nom.', 'warning'); return; }
+            document.getElementById('signataire-nom-input').value = nom;
+            document.getElementById('signature-data-input').value = '';
+            document.getElementById('tampon-data-input').value = '';
+            document.getElementById('signature-form').submit();
+        });
+
+        function submitForm(dataUrl) {
+            document.getElementById('signature-data-input').value = dataUrl;
+            document.getElementById('signataire-nom-input').value = document.getElementById('signataire-nom').value.trim();
+            document.getElementById('tampon-data-input').value = '';
+            document.getElementById('signature-form').submit();
+        }
+    });
+</script>
+{% endblock %}

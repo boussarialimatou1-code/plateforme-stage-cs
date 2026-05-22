@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .info-box { background: #f8faff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #16a34a; }
+        .code-display { font-size: 24px; font-weight: 800; color: #1a2b4b; letter-spacing: 2px; margin: 10px 0; }
+        .footer { font-size: 12px; color: #64748b; margin-top: 40px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 style="color: #1a2b4b;">Confirmation de candidature</h1>
+        </div>
+        
+        <p>Bonjour {{ user.prenom }} {{ user.nom }},</p>
+        
+        <p>Nous vous confirmons la bonne réception de votre dossier de candidature pour un stage à la <strong>Cour Suprême de la République du Bénin</strong>.</p>
+        
+        <div class="info-box">
+            <p style="margin: 0;"><strong>Référence du dossier :</strong> {{ dossier.reference }}</p>
+            <p style="margin: 5px 0 0 0;"><strong>Type de stage :</strong> {{ dossier.typeStage|capitalize }}</p>
+        </div>
+
+        <p>Pour suivre l'avancement de votre demande, veuillez utiliser votre <strong>code de suivi</strong> ci-dessous :</p>
+        
+        <div style="text-align: center; padding: 15px; background: #f1f5f9; border-radius: 8px;">
+            <div style="font-size: 14px; color: #64748b;">VOTRE CODE DE SUIVI</div>
+            <div class="code-display">{{ user.codeAcces }}</div>
+        </div>
+        
+        <p style="margin-top: 20px;">Vous pouvez accéder à l'interface de suivi à tout moment pour consulter votre statut ou télécharger vos documents :<br>
+        <a href="{{ url('app_verification') }}" style="color: #16a34a; font-weight: bold; text-decoration: none;">Accéder au suivi de mon dossier</a></p>
+        
+        <div class="footer">
+            <p>Ceci est un message automatique, merci de ne pas y répondre.</p>
+            <p>&copy; 2026 Cour Suprême de la République du Bénin.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,604 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Depot de Candidature - Cour Supreme du Benin{% endblock %}
+
+{% block stylesheets %}
+	<link rel="stylesheet" href="{{ asset('css/style.css') }}">
+    <style>
+        .application-form-section {
+            padding: 80px 0;
+            background-color: #f8faff;
+        }
+
+        .form-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            padding: 40px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 20px;
+        }
+
+        .form-header h3 {
+            color: #1a2b4b;
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        .form-section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 25px;
+            color: var(--border-blue);
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .section-title span {
+            background: var(--border-blue);
+            color: white;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 0.8rem;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #444;
+            font-size: 0.9rem;
+        }
+
+        label[for]::after, .required-star {
+            content: " *";
+            color: #dc2626;
+            font-weight: bold;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-control.is-invalid {
+            border-color: #dc2626 !important;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--border-blue);
+        }
+
+        .file-upload-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .file-upload-item {
+            border: 2px dashed #e0e0e0;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .file-upload-item:hover {
+            border-color: var(--primary-green);
+            background-color: #f0f7f4;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn-submit {
+            background-color: var(--primary-green);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            transition: all 0.3s;
+        }
+
+        .btn-submit:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .spinner-loader {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .btn-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .form-errors {
+            color: #dc2626 !important;
+            font-size: 0.8rem;
+            margin-top: 8px;
+            list-style: none;
+            padding: 0;
+            font-weight: 600;
+        }
+
+        .form-errors ul {
+            color: #dc2626 !important;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .form-errors li {
+            color: #dc2626 !important;
+        }
+
+        .file-upload-item.has-error {
+            border-color: #dc2626 !important;
+            background-color: #fef2f2;
+            box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1);
+        }
+
+        .file-upload-item.has-error strong {
+            color: #dc2626;
+        }
+
+        .is-invalid {
+            border-color: #dc2626 !important;
+        }
+
+        .global-error-alert {
+            display: none;
+            background-color: #fee2e2;
+            border: 1px solid #fecdd3;
+            color: #991b1b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+        }
+
+        .hp-field {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            position: absolute !important;
+            top: -9999px !important;
+            left: -9999px !important;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--border-blue);
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 20px;
+            transition: color 0.3s;
+        }
+
+        .back-btn:hover {
+            color: var(--primary-green);
+        }
+
+
+
+        .helper-text {
+            display: block;
+            margin-top: 4px;
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+	<header>
+		<div class="container">
+			<div class="header-top" style="justify-content: center;">
+				<div class="logo-section">
+					<img src="{{ asset('images/logo_cour_supreme.jpeg') }}" alt="Logo Benin">
+				</div>
+			</div>
+		</div>
+	</header>
+
+	<main>
+        <section class="application-form-section">
+            <div class="container">
+                <a href="{{ path('app_home') }}" class="back-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    Retour a l'accueil
+                </a>
+                <div class="form-card">
+                    <div class="form-header">
+                        <h3>Depot de Candidature</h3>
+                        <p>Renseignez vos informations pour soumettre votre dossier et obtenir votre code de suivi.</p>
+                    </div>
+
+                    <div id="globalError" class="global-error-alert">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        <span id="globalErrorText">Certains champs sont incorrects ou des documents sont manquants. Veuillez verifier les messages en rouge ci-dessous.</span>
+                    </div>
+
+                    {{ form_start(form, {'attr': {'novalidate': 'novalidate', 'id': 'candidatureForm', 'action': path('app_postuler'), 'method': 'POST'}}) }}
+                        
+
+
+                        <!-- Section 1: Informations Personnelles -->
+                        <div class="form-section">
+                            <div class="section-title"><span>1</span> Informations Personnelles</div>
+                            <div class="grid-2">
+                                <div class="form-group" data-field="nom">
+                                    {{ form_label(form.nom, 'Nom') }}
+                                    {{ form_widget(form.nom, {'attr': {'class': 'form-control', 'placeholder': 'Ex: DOE'}}) }}
+                                    <div class="form-errors">{{ form_errors(form.nom) }}</div>
+                                </div>
+                                <div class="form-group" data-field="prenom">
+                                    {{ form_label(form.prenom, 'Prenom(s)') }}
+                                    {{ form_widget(form.prenom, {'attr': {'class': 'form-control', 'placeholder': 'Ex: John'}}) }}
+                                    <div class="form-errors">{{ form_errors(form.prenom) }}</div>
+                                </div>
+                            </div>
+                            <div class="grid-2">
+                                <div class="form-group" data-field="email_first">
+                                    {{ form_label(form.email.first, 'Adresse Email') }}
+                                    {{ form_widget(form.email.first, {'attr': {'class': 'form-control', 'placeholder': 'Ex: john.doe@mail.com'}}) }}
+                                    <div class="form-errors">{{ form_errors(form.email.first) }}</div>
+                                </div>
+                                <div class="form-group" data-field="email_second">
+                                    {{ form_label(form.email.second, 'Confirmez votre Adresse Email') }}
+                                    {{ form_widget(form.email.second, {'attr': {'class': 'form-control', 'placeholder': 'Repetez l\'adresse email'}}) }}
+                                    <div class="form-errors">{{ form_errors(form.email.second) }}</div>
+                                </div>
+                            </div>
+                            <div class="grid-2">
+                                <div class="form-group" data-field="telephone">
+                                    {{ form_label(form.telephone, 'Telephone') }}
+                                    {{ form_widget(form.telephone, {'attr': {'class': 'form-control', 'placeholder': '01XXXXXXXX'}}) }}
+                                    <div class="form-errors">{{ form_errors(form.telephone) }}</div>
+                                    <small class="helper-text">Le numero doit commencer par 01 et comporter 10 chiffres.</small>
+                                </div>
+                            </div>
+                            <div class="grid-2">
+                                <div class="form-group" data-field="sexe">
+                                    {{ form_label(form.sexe, 'Sexe') }}
+                                    {{ form_widget(form.sexe, {'attr': {'class': 'form-control'}}) }}
+                                    <div class="form-errors">{{ form_errors(form.sexe) }}</div>
+                                </div>
+                                <div class="form-group" data-field="dob">
+                                    {{ form_label(form.dob, 'Date de naissance') }}
+                                    {% set maxDate = "now"|date_modify("-16 years")|date("Y-m-d") %}
+                                    {% set minDate = "now"|date_modify("-90 years")|date("Y-m-d") %}
+                                    {{ form_widget(form.dob, {'attr': {
+                                        'class': 'form-control',
+                                        'min': minDate,
+                                        'max': maxDate
+                                    }}) }}
+                                    <div class="form-errors">{{ form_errors(form.dob) }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 2: Cursus Academique -->
+                        <div class="form-section">
+                            <div class="section-title"><span>2</span> Cursus Academique</div>
+                            <div class="grid-2">
+                                <div class="form-group" data-field="etablissement">
+                                    {{ form_label(form.etablissement, 'Dernier Etablissement Frequente') }}
+                                    {{ form_widget(form.etablissement, {'attr': {'class': 'form-control'}}) }}
+                                    <div class="form-errors">{{ form_errors(form.etablissement) }}</div>
+                                </div>
+                                <div class="form-group" data-field="niveau">
+                                    {{ form_label(form.niveau, 'Niveau d\'etudes actuel') }}
+                                    {{ form_widget(form.niveau, {'attr': {'class': 'form-control'}}) }}
+                                    <div class="form-errors">{{ form_errors(form.niveau) }}</div>
+                                </div>
+                            </div>
+                            <div class="form-group" data-field="filiere">
+                                {{ form_label(form.filiere, 'Filiere / Specialite') }}
+                                {{ form_widget(form.filiere, {'attr': {'class': 'form-control'}}) }}
+                                <div class="form-errors">{{ form_errors(form.filiere) }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Section 3: Details du Stage -->
+                        <div class="form-section">
+                            <div class="section-title"><span>3</span> Details du Stage</div>
+                            <div class="grid-2">
+                                <div class="form-group" data-field="type_stage">
+                                    {{ form_label(form.type_stage, 'Type de Stage') }}
+                                    {{ form_widget(form.type_stage, {'attr': {'class': 'form-control'}}) }}
+                                    <div class="form-errors">{{ form_errors(form.type_stage) }}</div>
+                                </div>
+                                <div class="form-group" data-field="domaine">
+                                    {{ form_label(form.domaine, 'Domaine d\'affectation souhaite') }}
+                                    {{ form_widget(form.domaine, {'attr': {'class': 'form-control'}}) }}
+                                    <div class="form-errors">{{ form_errors(form.domaine) }}</div>
+                                </div>
+                            </div>
+                            <div class="form-group" data-field="duree">
+                                {{ form_label(form.duree, 'Duree du stage souhaitee') }}
+                                {{ form_widget(form.duree, {'attr': {'class': 'form-control'}}) }}
+                                <div class="form-errors">{{ form_errors(form.duree) }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Section 4: Documents -->
+                        <div class="form-section">
+                            <div class="section-title"><span>4</span> Documents a Fournir</div>
+                            <p class="helper-text" style="margin-bottom: 15px; font-size: 0.85rem; color: #64748b;">
+                                <strong>Documents :</strong> PDF uniquement - 2 Mo max.<br>
+                                <strong>Photo & Piece d'identite :</strong> PDF, PNG ou JPG - 2 Mo max.
+                            </p>
+                            <div class="file-upload-grid" id="allDocuments">
+                                <div class="file-upload-item" data-field="cv" onclick="document.getElementById('{{ form.cv.vars.id }}').click()">
+                                    <strong>Curriculum Vitae (CV)</strong><br><span class="file-name">Choisir</span>
+                                    {{ form_widget(form.cv, {'attr': {'class': 'file-input', 'onchange': 'updateFileName(this)'}}) }}
+                                    <div class="form-errors">{{ form_errors(form.cv) }}</div>
+                                </div>
+                                <div class="file-upload-item" data-field="lm" onclick="document.getElementById('{{ form.lm.vars.id }}').click()">
+                                    <strong>Lettre de Motivation</strong><br><span class="file-name">Choisir</span>
+                                    {{ form_widget(form.lm, {'attr': {'class': 'file-input', 'onchange': 'updateFileName(this)'}}) }}
+                                    <div class="form-errors">{{ form_errors(form.lm) }}</div>
+                                </div>
+                                <div class="file-upload-item" data-field="id_card" onclick="document.getElementById('{{ form.id_card.vars.id }}').click()">
+                                    <strong>Piece d'identite</strong><br><span class="file-name">Choisir</span>
+                                    {{ form_widget(form.id_card, {'attr': {'class': 'file-input', 'onchange': 'updateFileName(this)'}}) }}
+                                    <div class="form-errors">{{ form_errors(form.id_card) }}</div>
+                                </div>
+                                <div class="file-upload-item" data-field="photo" onclick="document.getElementById('{{ form.photo.vars.id }}').click()">
+                                    <strong>Photo d'identite</strong><br><span class="file-name">Choisir</span>
+                                    {{ form_widget(form.photo, {'attr': {'class': 'file-input', 'onchange': 'updateFileName(this)'}}) }}
+                                    <div class="form-errors">{{ form_errors(form.photo) }}</div>
+                                </div>
+                                <div class="file-upload-item" data-field="recommandation" id="recommandation-block" style="display: none;" onclick="document.getElementById('{{ form.recommandation.vars.id }}').click()">
+                                    <strong>Lettre de recommandation</strong><br><span class="file-name">Choisir</span>
+                                    {{ form_widget(form.recommandation, {'attr': {'class': 'file-input', 'onchange': 'updateFileName(this)'}}) }}
+                                    <div class="form-errors">{{ form_errors(form.recommandation) }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-submit" id="submitBtn">
+                            <span class="btn-content" id="btnContent">
+                                <span class="spinner-loader" id="btnSpinner"></span>
+                                <span id="btnText">Soumettre ma candidature</span>
+                            </span>
+                        </button>
+
+                        <div class="hp-field">
+                            {{ form_widget(form.fax_number) }}
+                        </div>
+
+                    {{ form_end(form) }}
+                </div>
+            </div>
+        </section>
+	</main>
+
+	<footer>
+		<div class="container">
+			<img src="{{ asset('images/logo_cour_supreme.jpeg') }}" alt="Logo Benin" class="footer-logo">
+			<p class="footer-text">Cour Supreme de la Republique du Benin</p>
+			<p class="footer-text">&copy; 2026 Tous droits reserves.</p>
+		</div>
+	</footer>
+
+    <script>
+
+
+        // Gestion des fichiers
+        function updateFileName(input) {
+            const fileName = input.files[0] ? input.files[0].name : 'Choisir';
+            const item = input.closest('.file-upload-item');
+            if (item) {
+                item.querySelector('.file-name').textContent = fileName;
+                item.style.borderColor = 'var(--primary-green)';
+                item.style.backgroundColor = '#f0f7f4';
+                item.classList.remove('has-error');
+                const errorDiv = item.querySelector('.form-errors');
+                if (errorDiv) errorDiv.innerHTML = '';
+            }
+        }
+
+        // Gestion recommandation
+        const typeStageSelect = document.getElementById('{{ form.type_stage.vars.id }}');
+        const recommandationBlock = document.getElementById('recommandation-block');
+
+        if (typeStageSelect) {
+            typeStageSelect.addEventListener('change', function() {
+                if (this.value === 'academique') {
+                    recommandationBlock.style.display = 'block';
+                } else {
+                    recommandationBlock.style.display = 'none';
+                }
+            });
+            if (typeStageSelect.value === 'academique') {
+                recommandationBlock.style.display = 'block';
+            }
+        }
+
+        // Soumission AJAX
+        const candidatureForm = document.getElementById('candidatureForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnSpinner = document.getElementById('btnSpinner');
+        const btnText = document.getElementById('btnText');
+        const globalError = document.getElementById('globalError');
+
+        if (candidatureForm) {
+            candidatureForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                document.querySelectorAll('.has-error').forEach(el => el.classList.remove('has-error'));
+                document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+                document.querySelectorAll('.form-errors').forEach(el => el.innerHTML = '');
+                if (globalError) globalError.style.display = 'none';
+
+                let fileError = false;
+                const maxFileSizeBytes = 2 * 1024 * 1024;
+
+                ['cv', 'lm', 'id_card', 'photo', 'recommandation'].forEach(fieldName => {
+                    const fileInput = document.getElementById('{{ form.cv.vars.id }}'.replace('cv', fieldName));
+                    if (fileInput && fileInput.files.length > 0) {
+                        const file = fileInput.files[0];
+                        if (file.size > maxFileSizeBytes) {
+                            fileError = true;
+                            const container = document.querySelector('[data-field="' + fieldName + '"]');
+                            if (container) {
+                                container.classList.add('has-error');
+                                const errorDiv = container.querySelector('.form-errors');
+                                if (errorDiv) errorDiv.innerHTML = 'Le fichier est trop lourd. La taille maximale autorisee est de 2 Mo.';
+                            }
+                        }
+                    }
+                });
+
+                if (fileError) {
+                    globalError.style.display = 'flex';
+                    document.getElementById('globalErrorText').innerText = "Certains fichiers depassent la taille maximale de 2 Mo. Veuillez verifier.";
+                    globalError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                btnSpinner.style.display = 'inline-block';
+                btnText.innerText = 'Envoi en cours...';
+
+                const formData = new FormData(candidatureForm);
+
+
+
+                fetch("{{ path('app_postuler') }}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 413) throw new Error('Payload Too Large');
+                        throw new Error('Server Error');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = data.redirect;
+                    } else {
+                        submitBtn.disabled = false;
+                        btnSpinner.style.display = 'none';
+                        btnText.innerText = 'Soumettre ma candidature';
+                        globalError.style.display = 'flex';
+
+                        if (data.errors) {
+                            for (let field in data.errors) {
+
+                                const container = document.querySelector('[data-field="' + field + '"]');
+                                if (container) {
+                                    if (container.classList.contains('file-upload-item')) {
+                                        container.classList.add('has-error');
+                                    } else {
+                                        const input = container.querySelector('.form-control');
+                                        if (input) input.classList.add('is-invalid');
+                                    }
+                                    const errorDiv = container.querySelector('.form-errors');
+                                    if (errorDiv) {
+                                        errorDiv.innerHTML = data.errors[field];
+                                    }
+                                }
+
+                                if (field === 'global') {
+                                    document.getElementById('globalErrorText').innerText = data.errors[field];
+                                }
+                            }
+                        }
+                        globalError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                })
+                .catch(error => {
+                    submitBtn.disabled = false;
+                    btnSpinner.style.display = 'none';
+                    btnText.innerText = 'Soumettre ma candidature';
+                    console.error('Error:', error);
+
+                    globalError.style.display = 'flex';
+                    if (error.message === 'Payload Too Large') {
+                         document.getElementById('globalErrorText').innerText = "La taille totale des fichiers depasse la limite autorisee par le serveur.";
+                    } else {
+                         document.getElementById('globalErrorText').innerText = "Une erreur inattendue s'est produite lors de la soumission.";
+                    }
+                    globalError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                });
+            });
+        }
+    </script>
+{% endblock %}
