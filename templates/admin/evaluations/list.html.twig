@@ -260,7 +260,7 @@
                                 {% endif %}
                                 <span class="badge {{ badge_class }} statut-text">{{ dossier.statut.getLabel() }}</span>
                             </td>
-                            <td class="date-text">{{ dossier.structure.getLabel() }}</td>
+                            <td class="date-text">{{ dossier.structure ? dossier.structure.getLabel() : '-' }}</td>
                             <td>
                                 {% if evaluators is not empty and dossier.statut.value not in ['Validé', 'Rejeté'] %}
                                     <form action="{{ path('app_evaluator_evaluations_assign', {id: dossier.id}) }}" method="POST" class="single-assign-form">
