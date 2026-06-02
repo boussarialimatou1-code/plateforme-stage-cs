@@ -1,17 +1,49 @@
-<h1>Mise à jour de votre dossier de stage</h1>
-<p>Bonjour {% if candidat.sexe=='M' %}Monsieur {% else candidat.sexe=='F' %}Madam {% endif %} {{ candidat.prenom }},</p>
-<p>Nous vous informons que le statut de votre dossier de stage (Réf: <strong>{{ dossier.reference }}</strong>) a été mis à jour.</p>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; }
+        .footer { font-size: 12px; color: #64748b; margin-top: 40px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="color: #1a2b4b;">Mise à jour de votre dossier de stage</h1>
 
-<p>Nouveau statut : <strong>{{ dossier.statut.getLabel() }}</strong></p>
+        <p>
+            Bonjour
+            {% if candidat.sexe == 'M' %}Monsieur
+            {% elseif candidat.sexe == 'F' %}Madame
+            {% endif %}
+            {{ candidat.prenom }},
+        </p>
 
-{% if dossier.statut.value == 'Rejeté' and motif %}
-    <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; margin: 20px 0;">
-        <strong style="color: #dc2626;">Motif du refus :</strong><br>
-        <p style="margin-top: 5px; font-style: italic;">"{{ motif }}"</p>
+        <p>Nous vous informons que le statut de votre dossier de stage (Réf : <strong>{{ dossier.reference }}</strong>) a été mis à jour.</p>
+
+        <p>Nouveau statut : <strong style="color: {{ dossier.statut.getColor() }};">{{ dossier.statut.getLabel() }}</strong></p>
+
+        {% if dossier.statut.value == 'Rejeté' and motif %}
+            <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; margin: 20px 0;">
+                <strong style="color: #dc2626;">Motif du refus :</strong>
+                <p style="margin-top: 5px; font-style: italic;">"{{ motif }}"</p>
+            </div>
+        {% elseif dossier.statut.value == 'Validé' %}
+            <p style="color: #16a34a;">Félicitations ! Votre demande de stage a été acceptée. Vous pouvez désormais télécharger votre lettre d'autorisation sur votre espace de suivi.</p>
+        {% endif %}
+
+        <p style="text-align: center; margin-top: 30px;">
+            <a href="{{ url('app_verification') }}"
+               style="background: #1a2b4b; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: 700;">
+                Consulter mon dossier
+            </a>
+        </p>
+
+        <div class="footer">
+            <p>Ceci est un message automatique, merci de ne pas y répondre.</p>
+            <p>&copy; {{ "now"|date("Y") }} Cour Suprême de la République du Bénin.</p>
+        </div>
     </div>
-{% elseif dossier.statut.value == 'Validé' %}
-    <p>Félicitations ! Votre demande de stage a été acceptée. Vous pouvez désormais télécharger votre lettre d'autorisation sur votre espace de suivi.</p>
-{% endif %}
-
-<p>Connectez-vous à la plateforme de suivi pour consulter l'intégralité des détails.</p>
-<p>Cordialement,<br>La Cour Suprême</p>
+</body>
+</html>

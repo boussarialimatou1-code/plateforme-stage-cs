@@ -21,8 +21,7 @@ class DocumentController extends AbstractController
 {
     public function __construct(
         private LoggerInterface $logger,
-    ) {
-    }
+    ) {}
 
     /**
      * CONSULTATION CANDIDAT : Voir un fichier envoyé
@@ -48,7 +47,7 @@ class DocumentController extends AbstractController
         }
 
         $filePath = $documentsDirectory . '/' . $document->getCheminFichier();
-        
+
         if (!file_exists($filePath)) {
             $this->logger->error('Fichier introuvable sur le serveur', [
                 'document_id' => $document->getId(),
@@ -60,9 +59,9 @@ class DocumentController extends AbstractController
 
         $response = new BinaryFileResponse($filePath);
         $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-        
+
         // On définit le type MIME pour forcer l'affichage navigateur
-        $mimeType = match($extension) {
+        $mimeType = match ($extension) {
             'pdf' => 'application/pdf',
             'jpg', 'jpeg' => 'image/jpeg',
             'png' => 'image/png',
@@ -86,13 +85,12 @@ class DocumentController extends AbstractController
     #[Route('/public-candidat/autorisation/telecharger/{id}', name: 'app_candidate_download_authorization')]
     public function downloadAuthorization(
         Dossier $dossier,
-        #[Autowire(param: 'kernel.pr
-        oject_dir')] string $projectDir,
+        #[Autowire(param: 'kernel.project_dir')] string $projectDir,
         RequestStack $requestStack,
         \Doctrine\ORM\EntityManagerInterface $entityManager
     ): Response {
         $sessionDossierId = $requestStack->getSession()->get('dossier_id');
-        
+
         if (!$sessionDossierId || $sessionDossierId !== $dossier->getId()) {
             $this->logger->warning('Tentative de téléchargement non autorisé', [
                 'dossier_id' => $dossier->getId(),
@@ -176,24 +174,29 @@ class DocumentController extends AbstractController
                 'Content-Disposition' => 'attachment; filename="Autorisation_Stage_CS.pdf"',
             ]);
         } catch (\Exception $e) {
-            $this->logger->error('Erreur lors de la génération du PDF', [
-                'dossier_id' => $dossier->getId(),
-                'error' => $e->getMessage(),
+            return new Response($e->getMessage() . "\n" . $e->getTraceAsString(), 500, [
+                'Content-Type' => 'text/plain',
             ]);
-            return new Response("Une erreur est survenue lors de la génération du PDF. Veuillez réessayer.", 500);
         }
+        // } catch (\Exception $e) {
+        //     $this->logger->error('Erreur lors de la génération du PDF', [
+        //         'dossier_id' => $dossier->getId(),
+        //         'error' => $e->getMessage(),
+        //     ]);
+        //     return new Response("Une erreur est survenue lors de la génération du PDF. Veuillez réessayer.", 500);
+        // }
     }
 
     /**
      * ROUTES ADMINISTRATIVES : Réservées au personnel (protégées par firewall)
      */
     #[Route('/admin/documents/voir/{id}', name: 'app_admin_document_view')]
-    public function adminView(Document $document, #[Autowire(param: 'documents_directory')] string $documentsDirectory): Response 
+    public function adminView(Document $document, #[Autowire(param: 'documents_directory')] string $documentsDirectory): Response
     {
         $this->denyAccessUnlessGranted('ROLE_EVALUATEUR');
-        
+
         $filePath = $documentsDirectory . '/' . $document->getCheminFichier();
-        
+
         if (!file_exists($filePath)) {
             $this->logger->error('Fichier admin introuvable', [
                 'document_id' => $document->getId(),
@@ -201,19 +204,19 @@ class DocumentController extends AbstractController
             ]);
             throw $this->createNotFoundException('Fichier introuvable.');
         }
-        
+
         $response = new BinaryFileResponse($filePath);
         $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_INLINE);
         return $response;
     }
 
     #[Route('/admin/documents/telecharger/{id}', name: 'app_document_download')]
-    public function adminDownload(Document $document, #[Autowire(param: 'documents_directory')] string $documentsDirectory): Response 
+    public function adminDownload(Document $document, #[Autowire(param: 'documents_directory')] string $documentsDirectory): Response
     {
         $this->denyAccessUnlessGranted('ROLE_EVALUATEUR');
-        
+
         $filePath = $documentsDirectory . '/' . $document->getCheminFichier();
-        
+
         if (!file_exists($filePath)) {
             $this->logger->error('Fichier admin introuvable pour téléchargement', [
                 'document_id' => $document->getId(),
@@ -221,7 +224,7 @@ class DocumentController extends AbstractController
             ]);
             throw $this->createNotFoundException('Fichier introuvable.');
         }
-        
+
         $response = new BinaryFileResponse($filePath);
         $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $document->getNomOriginal());
         return $response;

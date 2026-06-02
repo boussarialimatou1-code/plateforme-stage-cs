@@ -23,8 +23,7 @@ class NotificationService
         private EntityManagerInterface $entityManager,
         private LoggerInterface $logger,
         private string $adminEmail,
-    ) {
-    }
+    ) {}
 
     /**
      * Envoie un email et crée une notification interne pour tous les agents.
@@ -34,7 +33,7 @@ class NotificationService
         $agents = $this->utilisateurRepository->findAgents();
         $emails = array_filter(array_map(fn($agent) => $agent->getEmail(), $agents));
 
-        $message = sprintf(
+        $message = \sprintf(
             'Nouveau dossier de stage reçu : %s %s (%s) - %s',
             $dossier->getCandidat()->getNom(),
             $dossier->getCandidat()->getPrenom(),
@@ -64,8 +63,8 @@ class NotificationService
             $this->createInternalNotification($agent, $message);
         }
         $this->entityManager->flush();
-        
-        $this->logger->info('Notifications internes créées pour ' . count($agents) . ' agents');
+
+        $this->logger->info('Notifications internes créées pour ' . \count($agents) . ' agents');
     }
 
     /**
@@ -144,13 +143,15 @@ class NotificationService
     public function sendStatusUpdate(Dossier $dossier): void
     {
         $candidat = $dossier->getCandidat();
-        
+
         $derniereEval = $dossier->getDerniereEvaluation();
-        $motif = $derniereEval ? $derniereEval->getCommentaire() : null;
-        $evaluateurQuiANote = $derniereEval ? $derniereEval->getEvaluateur() : null;
+        $motif = $derniereEval?->getCommentaire();
+        $evaluateurQuiANote =  $derniereEval?->getEvaluateur();
+
 
         // 1. Email au candidat
-        if ($candidat && $candidat->getEmail()) {
+        if ($candidat?->getEmail()) {
+            // dd($candidat);
             $email = (new TemplatedEmail())
                 ->from($this->adminEmail)
                 ->to($candidat->getEmail())
@@ -168,7 +169,7 @@ class NotificationService
             } catch (\Exception $e) {
                 $this->logger->error('Erreur envoi email mise à jour statut : ' . $e->getMessage());
             }
-        } elseif ($candidat && !$candidat->getEmail()) {
+        } else {
             $this->logger->warning('Impossible d\'envoyer la mise à jour de statut : email candidat manquant', [
                 'dossier_ref' => $dossier->getReference(),
                 'candidat_id' => $candidat->getId(),
@@ -177,7 +178,7 @@ class NotificationService
 
         // 2. Notifications internes pour les AUTRES agents (pas celui qui a noté)
         $agents = $this->utilisateurRepository->findAgents();
-        
+
         $statutLabel = $dossier->getStatut()->getLabel();
         $message = sprintf(
             'Dossier %s - %s %s : statut mis à jour → %s',
@@ -197,7 +198,7 @@ class NotificationService
             $count++;
         }
         $this->entityManager->flush();
-        
+
         $this->logger->info('Notifications de changement de statut créées pour ' . $count . ' agents (évaluateur exclu).');
     }
 
@@ -282,7 +283,7 @@ class NotificationService
         $notification->setMessage($message);
         $notification->setDateEnvoi(new \DateTimeImmutable());
         $notification->setLu(false);
-        
+
         $this->entityManager->persist($notification);
     }
 }

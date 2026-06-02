@@ -21,8 +21,7 @@ class DashboardController extends AbstractController
 {
     public function __construct(
         private LoggerInterface $logger,
-    ) {
-    }
+    ) {}
 
     #[Route('/', name: 'app_admin_dashboard')]
     public function index(DossierRepository $dossierRepository): Response
@@ -32,7 +31,7 @@ class DashboardController extends AbstractController
             throw $this->createAccessDeniedException('Accès réservé aux évaluateurs uniquement.');
         }
 
-        /** @var Evaluateur|Admin|null $user */
+        /** @var Evaluateur|Admin|null  */
         $user = $this->getUser();
 
         // Si pas d'utilisateur connecté
@@ -51,7 +50,7 @@ class DashboardController extends AbstractController
         // Vérifier que l'utilisateur est bien un Evaluateur
         if (!$user instanceof Evaluateur) {
             $this->logger->error('Utilisateur non-évaluateur tente d\'accéder au dashboard', [
-                'user_class' => get_class($user),
+                'user_class' => \get_class($user),
             ]);
             throw $this->createAccessDeniedException('Accès non autorisé.');
         }
@@ -60,7 +59,7 @@ class DashboardController extends AbstractController
 
         $criteria = [];
         if (!$isMain) {
-            $criteria['evaluateur'] = $user;
+            $criteria['evaluateur'] = [$user, null];
         }
 
         $en_attente = $dossierRepository->count([...$criteria, 'statut' => StatutDossier::EN_ATTENTE]);

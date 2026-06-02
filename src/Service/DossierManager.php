@@ -26,66 +26,58 @@ class DossierManager
      * Crée un nouveau dossier avec son candidat.
      * Utilise les transactions pour garantir l'atomicité.
      */
+
     public function createDossier(Candidat $candidat, Dossier $dossier, array $files): Dossier
     {
-        // Validation métier : Stage Académique nécessite une recommandation
         if ($dossier->getTypeStage() === 'academique' && (!isset($files['recommandation']) || $files['recommandation'] === null)) {
             throw new \InvalidArgumentException("La lettre de recommandation est obligatoire pour un stage académique.");
         }
-
-        // Validation globale des entités
         $this->validateEntity($candidat);
         $this->validateEntity($dossier);
 
-        return $this->entityManager->wrapInTransaction(function() use ($candidat, $dossier, $files) {
-            // Initialisation du candidat si nouveau
+        // Transaction pure : uniquement la persistance
+        $this->entityManager->wrapInTransaction(function () use ($candidat, $dossier, $files) {
             if (!$candidat->getId()) {
                 $candidat->setRoles(['ROLE_CANDIDAT']);
                 $candidat->setCodeAcces((string) random_int(100000, 999999));
             }
-
             $this->entityManager->persist($candidat);
 
-            // Initialisation du dossier
             $dossier->setCandidat($candidat);
             $dossier->setStatut(StatutDossier::EN_ATTENTE);
             $dossier->setReference($this->generateReference());
-            $dossier->setTitre(sprintf(
+            $dossier->setTitre(\sprintf(
                 'Stage %s - %s %s',
                 ucfirst($dossier->getTypeStage()),
                 $candidat->getNom(),
                 $candidat->getPrenom()
             ));
-
             $this->entityManager->persist($dossier);
-            
-            // Gestion des fichiers
             $this->handleFileUploads($dossier, $files);
-
-            // Notifications (ne bloquent pas la transaction en cas d'échec)
-            try {
-                $this->notificationService->sendSubmissionConfirmation($dossier);
-            } catch (\Exception $e) {
-                $this->logger->error('Échec envoi email confirmation candidat', [
-                    'dossier_ref' => $dossier->getReference(),
-                    'candidat_email' => $candidat->getEmail(),
-                    'error' => $e->getMessage(),
-                ]);
-            }
-
-            try {
-                $this->notificationService->notifyAdminsOfNewSubmission($dossier);
-            } catch (\Exception $e) {
-                $this->logger->error('Échec notification nouveaux dossiers aux évaluateurs', [
-                    'dossier_ref' => $dossier->getReference(),
-                    'error' => $e->getMessage(),
-                ]);
-            }
-
-            return $dossier;
         });
-    }
+        // ICI : flush est fait, $dossier->getId() est disponible
 
+        try {
+            $this->notificationService->sendSubmissionConfirmation($dossier);
+        } catch (\Exception $e) {
+            $this->logger->error('Échec envoi email confirmation candidat', [
+                'dossier_ref' => $dossier->getReference(),
+                'candidat_email' => $candidat->getEmail(),
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        try {
+            $this->notificationService->notifyAdminsOfNewSubmission($dossier);
+        } catch (\Exception $e) {
+            $this->logger->error('Échec notification évaluateurs', [
+                'dossier_ref' => $dossier->getReference(),
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return $dossier;
+    }
     /**
      * Met à jour un dossier existant.
      */
@@ -94,10 +86,10 @@ class DossierManager
         $this->validateEntity($dossier->getCandidat());
         $this->validateEntity($dossier);
 
-        $this->entityManager->wrapInTransaction(function() use ($dossier, $files) {
+        $this->entityManager->wrapInTransaction(function () use ($dossier, $files) {
             $candidat = $dossier->getCandidat();
-            
-            $dossier->setTitre(sprintf(
+
+            $dossier->setTitre(\sprintf(
                 'Stage %s - %s %s',
                 ucfirst($dossier->getTypeStage()),
                 $candidat->getNom(),
@@ -114,14 +106,14 @@ class DossierManager
     private function validateEntity(object $entity): void
     {
         $errors = $this->validator->validate($entity);
-        if (count($errors) > 0) {
+        if (\count($errors) > 0) {
             $messages = [];
             foreach ($errors as $error) {
                 $messages[] = $error->getPropertyPath() . ': ' . $error->getMessage();
             }
             $errorMessage = "Validation échouée : " . implode(', ', $messages);
             $this->logger->error($errorMessage, [
-                'entity' => get_class($entity),
+                'entity' => \get_class($entity),
                 'errors' => $messages,
             ]);
             throw new \InvalidArgumentException($errorMessage);
@@ -144,7 +136,7 @@ class DossierManager
                     throw new \InvalidArgumentException("Erreur lors de l'upload du fichier " . $file->getClientOriginalName());
                 }
 
-                $documentType = match($type) {
+                $documentType = match ($type) {
                     'cv' => TypeDocument::CV,
                     'lm' => TypeDocument::LETTRE_MOTIVATION,
                     'id_card' => TypeDocument::PIECE_IDENTITE,
@@ -180,7 +172,7 @@ class DossierManager
      */
     public function createRenouvellement(Dossier $originalDossier, int $newDuree, UploadedFile $letter): void
     {
-        $this->entityManager->wrapInTransaction(function() use ($originalDossier, $newDuree, $letter) {
+        $this->entityManager->wrapInTransaction(function () use ($originalDossier, $newDuree, $letter) {
             $newDossier = new Dossier();
             $newDossier->setCandidat($originalDossier->getCandidat());
             $newDossier->setTypeStage($originalDossier->getTypeStage());
@@ -203,7 +195,7 @@ class DossierManager
             $document->setDossier($newDossier);
 
             $this->entityManager->persist($document);
-            
+
             try {
                 $this->notificationService->notifyAdminsOfNewSubmission($newDossier);
             } catch (\Exception $e) {
@@ -227,4 +219,4 @@ class DossierManager
             return 'CS-' . date('Y') . '-' . strtoupper(substr(uniqid(), -6));
         }
     }
-}
+}

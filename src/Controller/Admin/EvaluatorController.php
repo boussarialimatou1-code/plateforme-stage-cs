@@ -14,11 +14,9 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
  * Contrôleur d'évaluation des dossiers.
@@ -29,8 +27,7 @@ class EvaluatorController extends AbstractController
     public function __construct(
         private NotificationService $notificationService,
         private LoggerInterface $logger,
-    ) {
-    }
+    ) {}
 
     private function getSignataireNom(EntityManagerInterface $entityManager): string
     {
@@ -45,7 +42,7 @@ class EvaluatorController extends AbstractController
     }
 
     #[Route('/', name: 'app_evaluator_evaluations_list')]
-    public function list(DossierRepository $dossierRepository, Request $request, \Doctrine\ORM\EntityManagerInterface $entityManager): Response
+    public function list(DossierRepository $dossierRepository, Request $request, EntityManagerInterface $entityManager): Response
     {
         if (!$this->isGranted('ROLE_EVALUATEUR')) {
             throw $this->createAccessDeniedException('Accès réservé aux évaluateurs uniquement.');
@@ -66,7 +63,7 @@ class EvaluatorController extends AbstractController
         $user = $this->getUser();
 
         if (!$user->isMainEvaluator()) {
-            $criteria['evaluateur'] = $user;
+            $criteria['evaluateur'] = [$user, null]; // permet de recuperer les dossiers non traités ou ceux traités appartenant à cet évaluateur
         }
 
         if ($structureFilter) {
@@ -77,12 +74,12 @@ class EvaluatorController extends AbstractController
         }
 
         $dossiers = $dossierRepository->findBy($criteria);
-
         $evaluators = [];
         if ($user->isMainEvaluator() || $this->isGranted('ROLE_ADMIN')) {
             $evaluators = $entityManager->getRepository(\App\Entity\Evaluateur::class)->findAll();
         }
 
+        // dd($dossiers, $dossiers2, $criteria);
         return $this->render('admin/evaluations/list.html.twig', [
             'dossiers' => $dossiers,
             'evaluators' => $evaluators,
@@ -96,12 +93,12 @@ class EvaluatorController extends AbstractController
         /** @var \App\Entity\Evaluateur $user */
         $user = $this->getUser();
 
-        if (!$user->isMainEvaluator() && $dossier->getEvaluateur() !== $user) {
+        if (!$user->isMainEvaluator() && $dossier->getEvaluateur() !== null && $dossier->getEvaluateur() !== $user) {
             throw $this->createAccessDeniedException('Ce dossier ne vous est pas assigné.');
         }
 
         // ✅ MODIFIÉ : On peut évaluer si le statut n'est ni VALIDE ni REJETE
-        $canEvaluate = !in_array($dossier->getStatut(), [StatutDossier::VALIDE, StatutDossier::REJETE]);
+        $canEvaluate = ! \in_array($dossier->getStatut(), [StatutDossier::VALIDE, StatutDossier::REJETE]);
 
         $evaluation = new Evaluation();
 
@@ -144,7 +141,7 @@ class EvaluatorController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $evaluation->setDossier($dossier);
             $evaluation->setEvaluateur($this->getUser());
-
+            $dossier->setEvaluateur($this->getUser());
             $avis = $evaluation->getAvis();
 
             if ($avis === \App\Enum\EvaluationAvis::FAVORABLE) {
@@ -178,7 +175,6 @@ class EvaluatorController extends AbstractController
                 $this->addFlash('success', 'Candidat admis ! Veuillez maintenant générer et signer la lettre officielle.');
 
                 return $this->redirectToRoute('app_evaluator_dossier_prepare_letter', ['id' => $dossier->getId()]);
-
             } elseif ($avis === \App\Enum\EvaluationAvis::DEFAVORABLE) {
                 $dossier->setStatut(StatutDossier::REJETE);
 
@@ -195,7 +191,6 @@ class EvaluatorController extends AbstractController
                 }
 
                 $this->addFlash('warning', 'Évaluation enregistrée : Candidature REFUSÉE. Le candidat a été notifié.');
-
             } else {
                 $dossier->setStatut(StatutDossier::MIS_EN_RESERVE);
 
@@ -290,9 +285,9 @@ class EvaluatorController extends AbstractController
         $notificationErrors = 0;
 
         foreach ($dossierIds as $dossierId) {
-            $dossier = $entityManager->getRepository(\App\Entity\Dossier::class)->find((int) $dossierId);
+            $dossier = $entityManager->getRepository(Dossier::class)->find((int) $dossierId);
             // ✅ MODIFIÉ : On peut assigner même les dossiers ACCEPTE (pour la lettre)
-            if ($dossier && !in_array($dossier->getStatut(), [StatutDossier::VALIDE, StatutDossier::REJETE])) {
+            if ($dossier && ! \in_array($dossier->getStatut(), [StatutDossier::VALIDE, StatutDossier::REJETE])) {
                 $dossier->setEvaluateur($evaluateur);
                 $count++;
 
@@ -327,7 +322,7 @@ class EvaluatorController extends AbstractController
     public function prepareLetter(Dossier $dossier, EntityManagerInterface $entityManager): Response
     {
         // ✅ MODIFIÉ : Le dossier doit être ACCEPTE ou VALIDE
-        if (!in_array($dossier->getStatut(), [StatutDossier::ACCEPTE, StatutDossier::VALIDE])) {
+        if (! \in_array($dossier->getStatut(), [StatutDossier::ACCEPTE, StatutDossier::VALIDE])) {
             $this->addFlash('error', "Ce dossier n'est pas prêt pour la génération de la lettre.");
             return $this->redirectToRoute('app_evaluator_evaluations_list');
         }
@@ -346,14 +341,15 @@ class EvaluatorController extends AbstractController
     #[Route('/lettre/apercu/{id}', name: 'app_evaluator_dossier_preview_letter')]
     public function previewLetter(
         Dossier $dossier,
-        #[Autowire(param: 'kernel.project_dir')] string $projectDir,
         EntityManagerInterface $entityManager
     ): Response {
         // ✅ MODIFIÉ : Le dossier doit être ACCEPTE ou VALIDE
-        if (!in_array($dossier->getStatut(), [StatutDossier::ACCEPTE, StatutDossier::VALIDE])) {
+        if (! \in_array($dossier->getStatut(), [StatutDossier::ACCEPTE, StatutDossier::VALIDE])) {
             $this->addFlash('error', "Ce dossier n'est pas prêt pour la génération de la lettre.");
             return $this->redirectToRoute('app_evaluator_evaluations_list');
         }
+
+        $projectDir = $this->getParameter('kernel.project_dir');
 
         $logoPath = $projectDir . '/public/images/logo_cour_supreme.jpeg';
         $logoBase64 = '';
