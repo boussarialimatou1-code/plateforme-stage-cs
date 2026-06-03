@@ -520,7 +520,7 @@
                 cancelButtonText: 'Annuler'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    document.getElementById('input-numero').value = numerostats.html.twig;
+                    document.getElementById('input-numero').value = numero;
                     document.getElementById('input-signataire-nom').value = document.getElementById('signataire-name').innerText.trim();
 
                     if (!signaturePad.isEmpty()) {

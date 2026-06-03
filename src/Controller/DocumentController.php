@@ -174,17 +174,12 @@ class DocumentController extends AbstractController
                 'Content-Disposition' => 'attachment; filename="Autorisation_Stage_CS.pdf"',
             ]);
         } catch (\Exception $e) {
-            return new Response($e->getMessage() . "\n" . $e->getTraceAsString(), 500, [
-                'Content-Type' => 'text/plain',
+            $this->logger->error('Erreur lors de la génération du PDF', [
+                'dossier_id' => $dossier->getId(),
+                'error' => $e->getMessage(),
             ]);
+            return new Response("Une erreur est survenue lors de la génération du PDF. Veuillez réessayer.", 500);
         }
-        // } catch (\Exception $e) {
-        //     $this->logger->error('Erreur lors de la génération du PDF', [
-        //         'dossier_id' => $dossier->getId(),
-        //         'error' => $e->getMessage(),
-        //     ]);
-        //     return new Response("Une erreur est survenue lors de la génération du PDF. Veuillez réessayer.", 500);
-        // }
     }
 
     /**
