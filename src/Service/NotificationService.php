@@ -2,14 +2,20 @@
 
 namespace App\Service;
 
+use App\Entity\AppConfig;
 use App\Entity\Dossier;
 use App\Entity\Utilisateur;
 use App\Entity\Notification;
+use App\Enum\StatutDossier;
 use App\Repository\UtilisateurRepository;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\Mailer\MailerInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use Twig\Environment;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
  * SERVICE : NOTIFICATION (NotificationService)
@@ -23,6 +29,7 @@ class NotificationService
         private EntityManagerInterface $entityManager,
         private LoggerInterface $logger,
         private string $adminEmail,
+        private Environment $twig,
     ) {}
 
     /**
@@ -140,8 +147,10 @@ class NotificationService
      * Mise à jour du statut (Accepté/Refusé/Mis en réserve)
      * Envoie un email au candidat ET crée des notifications internes pour les AUTRES agents seulement.
      */
-    public function sendStatusUpdate(Dossier $dossier): void
-    {
+    public function sendStatusUpdate(
+        Dossier $dossier,
+        #[Autowire(param: 'kernel.project_dir')] string $projectDir,
+    ): void {
         $candidat = $dossier->getCandidat();
 
         $derniereEval = $dossier->getDerniereEvaluation();
@@ -164,6 +173,14 @@ class NotificationService
                 ]);
 
             try {
+
+                if ($dossier->getStatut() === StatutDossier::VALIDE) {
+                    $email->attach(
+                        $this->generateAuthorizationPdf($dossier, $projectDir),
+                        'Autorisation_Stage_CS.pdf',
+                        'application/pdf'
+                    );
+                }
                 $this->mailer->send($email);
                 $this->logger->info('Email mise à jour statut envoyé à : ' . $candidat->getEmail());
             } catch (\Exception $e) {
@@ -285,5 +302,80 @@ class NotificationService
         $notification->setLu(false);
 
         $this->entityManager->persist($notification);
+    }
+    private function generateAuthorizationPdf(
+        Dossier $dossier,
+        #[Autowire(param: 'kernel.project_dir')] string $projectDir,
+    ): string {
+        $logoPath = $projectDir . '/public/images/logo_cour_supreme.jpeg';
+
+        $logoBase64 = '';
+
+        if (file_exists($logoPath)) {
+            $type = pathinfo($logoPath, PATHINFO_EXTENSION);
+            $data = file_get_contents($logoPath);
+
+            $logoBase64 = sprintf(
+                'data:image/%s;base64,%s',
+                $type,
+                base64_encode($data)
+            );
+        }
+
+        $signatureBase64 = $dossier->getSignatureOfficielle();
+        $numeroOfficiel = $dossier->getNumeroOfficiel() ?: '________';
+
+        $tamponConfig = $this->entityManager
+            ->getRepository(AppConfig::class)
+            ->findOneBy(['settingKey' => 'official_stamp']);
+
+        $tamponBase64 = $tamponConfig?->getSettingValue();
+
+        $signataireConfig = $this->entityManager
+            ->getRepository(AppConfig::class)
+            ->findOneBy(['settingKey' => 'signataire_nom']);
+
+        $signataireNom = $signataireConfig?->getSettingValue()
+            ?? 'François-Richard David KPENOU';
+
+        if (!function_exists('imagecreatefrompng')) {
+            if (
+                $signatureBase64 &&
+                str_contains($signatureBase64, 'image/png')
+            ) {
+                $signatureBase64 = null;
+            }
+
+            if (
+                $logoBase64 &&
+                str_contains($logoBase64, 'image/png')
+            ) {
+                $logoBase64 = '';
+            }
+        }
+
+        $html = $this->twig->render(
+            'emails/internship_authorization.html.twig',
+            [
+                'dossier' => $dossier,
+                'logo_base64' => $logoBase64,
+                'signature_base64' => $signatureBase64,
+                'numero_officiel' => $numeroOfficiel,
+                'signataire_nom' => $signataireNom,
+                'tampon_base64' => $tamponBase64,
+            ]
+        );
+
+        $options = new Options();
+        $options->set('defaultFont', 'Times-Roman');
+        $options->set('isRemoteEnabled', true);
+
+        $dompdf = new Dompdf($options);
+
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return $dompdf->output();
     }
 }
